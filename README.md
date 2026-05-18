@@ -4,4 +4,6 @@ To have access to these repos, follow the links below:
   * Ardupilot: https://github.com/ArduPilot/ardupilot
   * MAVRIK: https://github.com/usuaero/MAVIStran
 
-IMPORTANT NOTE: MAVRIK is a private program and needs permission to use.
+## IMPORTANT NOTES: 
+* MAVRIK is a private program and needs permission to use.
+* "view.py" to run the wireframe is ommitted from the "Wireframe" folder because it is a private file from the MAVRIK repo.
