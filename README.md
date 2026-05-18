@@ -4,4 +4,4 @@ To have access to these repos, follow the links below:
   * Ardupilot: https://github.com/ArduPilot/ardupilot
   * MAVRIK: https://github.com/usuaero/MAVIStran
 
-* IMPORTANT NOTE: MAVRIK is a private program and needs permission to use.
+IMPORTANT NOTE: MAVRIK is a private program and needs permission to use.
