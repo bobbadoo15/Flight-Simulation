@@ -1,0 +1,118 @@
+{
+    "components": {
+        "F16": {
+            "type": "custom",
+            "weight[lbf]": 20500,
+            "volume": 1,
+            "location[ft]": [1, 0, 0],
+            "inertia[slug*ft^2]": [9496, 0, 982, 55814, 0, 63100],
+            "angular_momentum[slug*ft^2/s]": [160, 0, 0],
+            "aerodynamics": {
+                "reference": {
+                    "area[ft^2]": 300,
+                    "longitudinal_length[ft]": 11.32,
+                    "lateral_length[ft]": 30,
+                    "moment_reference_location[ft]": [-1,0,0]
+                },
+                "polynomials": {
+                    "CL_wind" : {
+                        "CL1": 1.0,
+                        "alphahat" : 0.0,
+                        "qbar" : 29.5,
+                        "elevator" : 0.5153
+                    },
+                    "CS" : {
+                        "CS": 1.0
+                    },
+                    "CD_wind" : {
+                        "0" : 0.0425,
+                        "CL1" : -0.1154,
+                        "CL1^2" : 0.2427,
+                        "CS_CS" : 0.8733,
+                        "qbar" : -1.498,
+                        "alpha_qbar" : 22.99,
+                        "elevator" : -0.0006,
+                        "alpha_elevator" : 0.7084,
+                        "elevator_elevator" : 0.3251
+                    },
+                    "Cl" : {
+                        "beta" : -0.1048,
+                        "pbar" : -0.3766,
+                        "rbar" : -0.0206,
+                        "alpha_rbar" : 1.0114,
+                        "aileron" : -0.1337,
+                        "rudder" : 0.0272
+                    },
+                    "Cm" : {
+                        "0" : -0.0642,
+                        "alpha" : 0.0955,
+                        "qbar" : -5.5,
+                        "alphahat" : 0.0,
+                        "elevator" : -0.5926
+                    },
+                    "Cn" : {
+                        "beta" : 0.2194,
+                        "pbar" : -0.0074,
+                        "alpha_pbar" : -0.0904,
+                        "rbar" : -0.4605,
+                        "aileron" : -0.0379,
+                        "alpha_aileron" : 0.0922,
+                        "rudder" : -0.0854
+                    }
+                },
+                "thrusts": {
+                    "Cx": {
+                        "Ta": 0.84,
+                        "T0": 29550.0,
+                        "independent_variable": "throttle"
+                    }
+                }
+            },
+            "cg[ft]": [0, 0, 0],
+            "inertia_reference_location[ft]": [0, 0, 0],
+            "custom_variables": {
+                "polynomials": {
+                    "CL1": {
+                        "0": 0.0535,
+                        "alpha": 3.8459
+                    },
+                    "CS": {
+                        "beta": -1.1086,
+                        "pbar": -0.0207,
+                        "pbar_alpha": 1.1566,
+                        "rbar": 0.99,
+                        "aileron": 0.0601,
+                        "rudder": 0.1668
+                    }
+                }
+            }
+        }
+    },
+    "control_effectors": {
+        "aileron" : {
+            "magnitude_limits[deg]" : [-21.5, 21.5],
+            "rate_limits[deg/s]" : [-80.0, 80.0],
+            "time_constant[s]" : 0.05
+        },
+        "elevator" : {
+            "magnitude_limits[deg]" : [-25.0, 25.0],
+            "rate_limits[deg/s]" : [-60.0, 60.0],
+            "time_constant[s]" : 0.05
+        },
+        "rudder" : {
+            "magnitude_limits[deg]" : [-30.0, 30.0],
+            "rate_limits[deg/s]" : [-120.0, 120.0],
+            "time_constant[s]" : 0.05
+        },
+        "throttle" : {
+            "magnitude_limits" : [0.0, 1.0],
+            "rate_limits[/s]" : [-1.0, 1.0],
+            "time_constant[s]" : 0.1
+        }
+    },
+    "reference": {
+        "area[ft^2]": 300,
+        "longitudinal_length[ft]": 11.32,
+        "lateral_length[ft]": 30
+    }
+}

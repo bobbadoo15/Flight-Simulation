@@ -1,0 +1,63 @@
+{
+    "graphics": {
+        "type": "send",
+        "channel_type": "udp",
+        "refresh_rate": 35,
+        "data_type": "state",
+        "port_ID": 5005
+    },
+    "data_log": {
+        "type": "send",
+        "channel_type": "file",
+        "refresh_rate": 30,
+        "data_type": "both",
+        "filename": "datalog.csv"
+    },
+    "px4": {
+        "type": "receive",
+        "data_type": "px4",
+        "hil_sensor": {
+            "refresh_rate_fast": 125,
+            "refresh_rate_slow": 20,
+            "imu": {
+                "bias_error": 0,
+                "error_standard_deviation": 0.0001,
+                "units": ["m/s^2", "m/s^2", "m/s^2", "rad/s", "rad/s", "rad/s", "ft", "ft", "ft"]
+            },
+            "ads": {
+                "bias_error": 0,
+                "error_standard_deviation": 0.0001,
+                "units": ["hN/m^2", "hN/m^2", "hN/m^2", "K"]
+            }
+        },
+        "hil_gps": {
+            "refresh_rate": 10,
+            "gps": {
+                "bias_error": 0,
+                "error_standard_deviation": 0,
+                "units": ["s", "udeg", "udeg", "mm", "cm/s", "cm/s", "cm/s"]
+            }
+        },
+        "xhil_state_quaternion": {
+            "refresh_rate": 200,
+            "accelerometer": {
+                "bias_error": 0,
+                "error_standard_deviation": 0,
+                "units": ["mgs", "mgs", "mgs"]
+            },
+            "gyroscope": {
+                "bias_error": 0,
+                "error_standard_deviation": 0,
+                "units": ["rad/s", "rad/s", "rad/s"]
+            },
+            "gps": {
+                "bias_error": 0,
+                "error_standard_deviation": 0,
+                "units": ["s", "udeg", "udeg", "mm", "cm/s", "cm/s", "cm/s"]
+            }
+        },
+        "channel_type": "tcp",
+        "port_ID": 4560,
+        "IP_address": "144.39.221.84"
+    }
+}

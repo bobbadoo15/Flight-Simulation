@@ -1,0 +1,16 @@
+{
+    "graphics": {
+        "type": "send",
+        "channel_type": "udp",
+        "refresh_rate": 35,
+        "data_type": "state",
+        "port_ID": 5005
+    },
+    "data_log": {
+        "type": "send",
+        "channel_type": "file",
+        "refresh_rate": 30,
+        "data_type": "both",
+        "filename": "datalog.csv"
+    }
+}
