@@ -50,27 +50,39 @@ module units_m
                        knots = 0.5924838
 
     !! Desired acceleration from ft/s^2
-    real, parameter :: 
+    real, parameter :: metpss = 0.3048, &
+                       gs     = 1. / 32.174048556430442
 
     !! Desired mass from US to SI
-    real, parameter :: lbm2kg  = 0.45359237, & ! Pound-mass to kilograms
-                       slug2kg = 14.5939029    ! Slugs to kilograms
+    real, parameter :: lbm2kg  = 0.45359237, &       ! Pound-mass to kilograms
+                       slug2kg = 14.5939029, &       ! Slugs to kilograms
+                       slug    = 0.03108095, &       ! lbm to slug
+                       lbm     = 32.174048556430442  ! slug to lbm
 
     !! Desired temperature from Fahrenheit
-    real, parameter :: kelvin = 255.927778., &
-                       celcius = -17.2222222., &
-                       rankine = 460.67.
+    real, parameter :: kelvin = 255.927778, &
+                       celcius = -17.2222222, &
+                       rankine = 460.67
 
     !! Desired force from lbf = slug * ft/s^2
-    real, parameter :: N   = 4.4482216152605
+    real, parameter :: N   = 4.4482216152605, &
+                       ton = 1. / 2000.
 
+    !! Desired pressure from PSI
+    real, parameter :: Pa   = 6894.75729, &
+                       bar  = 0.06894757, &
+                       torr = 51.7149327, &
+                       atm  = 0.06804596, &
+                       psf  = 144.
 
     !! =====================================================
     !!                    SI Information
     !! =====================================================
 
     !! Prefixes
-    real, parameter ::  atto  = 1.e-18, &   ! a
+    real, parameter ::  yocto = 1.e-24, &   ! y
+                        zepto = 1.e-21, &   ! z
+                        atto  = 1.e-18, &   ! a
                         femto = 1.e-15, &   ! f
                         pico  = 1.e-12, &   ! p
                         nano  = 1.e-9, &    ! n
@@ -85,9 +97,10 @@ module units_m
                         giga  = 1.e9, &     ! G
                         tera  = 1.e12, &    ! T
                         peta  = 1.e15, &    ! P
-                        exa   = 1.e18       ! E
+                        exa   = 1.e18, &    ! E
+                        zett  = 1.e21, &    ! Z
+                        yotta = 1.e24       ! Y
                        
-
 contains
     
 end module units_m
