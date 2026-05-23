@@ -102,7 +102,7 @@ contains
     !!            Misc. Vector Relations
     !! ============================================
 
-    function v_new()
-    end function v_new
+    function v_create()
+    end function v_create
 
 end module vector_m
