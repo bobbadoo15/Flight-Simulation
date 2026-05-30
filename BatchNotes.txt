@@ -1,0 +1,56 @@
+THIS IS STRICTLY NOTES ON CREATING A BATCH FILE AND HOW THEY FUNCTION
+
+===== COMMENTS =====
+* 'REM' or '::': Used to make comments
+
+===== DISPLAYING =====
+* 'echo <comment>': Used to display text during compiling files
+* 'echo off': Stop displaying commands after this command
+* '@': Don't display this command ==> '@echo off
+
+===== COMMANDS =====
+* Running commands in a windows terminal is the same in the batch file;
+  just write out the command
+* 'cd <directory>': Change directory
+* 'pause': Means 'Press any key to continue...'
+* 'mkdir build': Creates a directory
+* 'rmdir build': Removes a directory
+* 'rmdir /s build': Removes a directory and evertyhing inside it
+* 'del <filename>': Deletes a file 
+* 'dir': Displays the content in the current folder in the directory
+* 'gfortran -c <filename>.f90': Compiles that file
+    * Creates .o and .mod files
+* 'gfortran <file path> -J <file path>': Tells fortran where to put generated .mod files
+* 'gfortran <file path> -I <file path>': Tells fortran where to look for files when compiling
+* 'gfortran <> -o <>': Outputs a file in a path/filename
+
+===== VARIABLES =====
+* 'set <variable name>': Creates a variable
+    * Ex: set EXE=FlightSim.exe ==> echo %EXE% ==> Output is FlightSim.exe
+* "&<variable name>&': Used when stating a variable
+
+===== CONDITIONS =====
+* 'if &...& == ... ()': Conditional syntax
+
+===== LOGIC =====
+* '==': Equals
+* 'neq': Not equal to
+* 'not exist': Something does not exist
+* '... > ...': Output information goes somewhere
+* 'echo ... >> <filename>': Appending information at the end of a file
+
+===== ERROR HANDLING =====
+* '0' = success
+* 'non-zero' = failure
+* '&errorlevel&': Contains info on if the compiler works or not
+
+===== LOOPS =====
+* 'for &&<random letter> in (<list name>) do (<actions>)': For loop
+
+===== MISC =====
+* '... ^': Line continuation
+* '.o': Object file in binary
+* '.mod': Module file that contains a description of what goes on in the module file
+
+===== CALLING OTHER FILES =====
+* 'call <filename>': Calls another file outside of the batch file
