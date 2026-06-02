@@ -1,6 +1,6 @@
 !! This is the main program for the flight simulation. It will initialize the simulation, run the main loop, and handle any necessary cleanup.
 
-program flight_simulation
+program FlightAnalysisControlOperationsNetwork
     use units_m
     use vector_m
     use matrix_m
@@ -8,6 +8,6 @@ program flight_simulation
     implicit none
 
     ! Call for euler angles
+
     
-    
-end program flight_simulation
+end program FlightAnalysisControlOperationsNetwork
