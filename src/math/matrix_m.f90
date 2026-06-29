@@ -12,12 +12,13 @@ module matrix_m
         real(rk), dimension(3,3) :: mat
     contains
         procedure :: matmult     => m_times_m
-        procedure :: transpose   => m_transpose
+        procedure :: trans       => m_transpose
         procedure :: inv         => m_inverse
         procedure :: init        => m_init
         procedure :: printmat    => m_print
         procedure :: trace       => m_trace
         procedure :: det         => m_determinant
+        procedure :: adj         => m_adjugate
     end type matrix
 
     interface matrix
@@ -173,10 +174,40 @@ contains
     !!               Matrix Relations
     !! ============================================
 
+    function m_adjugate(this) result(adj)
+        ! The adjugate is the transpose of the cofactor matrix.
+        class(matrix), intent(in) :: this
+        type(matrix)              :: adj
+        real(rk)                  :: cof(3,3)
+
+        ! Cofactor matrix
+        cof(1,1) =  this%mat(2,2)*this%mat(3,3) - this%mat(2,3)*this%mat(3,2)
+        cof(1,2) = -(this%mat(2,1)*this%mat(3,3) - this%mat(2,3)*this%mat(3,1))
+        cof(1,3) =  this%mat(2,1)*this%mat(3,2) - this%mat(2,2)*this%mat(3,1)
+
+        cof(2,1) = -(this%mat(1,2)*this%mat(3,3) - this%mat(1,3)*this%mat(3,2))
+        cof(2,2) =  this%mat(1,1)*this%mat(3,3) - this%mat(1,3)*this%mat(3,1)
+        cof(2,3) = -(this%mat(1,1)*this%mat(3,2) - this%mat(1,2)*this%mat(3,1))
+
+        cof(3,1) =  this%mat(1,2)*this%mat(2,3) - this%mat(1,3)*this%mat(2,2)
+        cof(3,2) = -(this%mat(1,1)*this%mat(2,3) - this%mat(1,3)*this%mat(2,1))
+        cof(3,3) =  this%mat(1,1)*this%mat(2,2) - this%mat(1,2)*this%mat(2,1)
+
+        adj%mat = transpose(cof)
+    end function m_adjugate
+
     function m_inverse(m) result(m_inv)
         class(matrix), intent(in) :: m
         type(matrix)              :: m_inv
+        real(rk)                  :: det
+        ! Check if determinant is nonzer
+        det = m%det()
+        if (abs(det) <= eps) then
+            write(*,*) "Error: Matrix is singular or nearly singular in m_inverse"
+            stop
+        end if
 
+        m_inv = m%adj() / det
     end function m_inverse
 
     function m_transpose(m) result(mt)
