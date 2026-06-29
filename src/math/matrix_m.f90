@@ -5,8 +5,9 @@ module matrix_m
 
     type :: matrix
     contains
-        procedure :: mult => m_times_m
-        procedure :: t    => m_transpose
+        procedure :: matmult => m_times_m
+        procedure :: mattran => m_transpose
+        procedure :: matinv  => m_inverse
     end type matrix
 
     interface operator (*)
@@ -22,6 +23,10 @@ module matrix_m
     interface operator (-)
     end interface operator (-)
 
+    interface operator (.inv.)
+        procedure m_inverse
+    end interface operator (.inv.)
+
     interface operator (.t.)
         procedure m_transpose
     end interface operator (.t.)
@@ -36,7 +41,12 @@ contains
     !! ============================================
 
     ! Matrix multiplication
-    function m_times_m()
+    function m_inverse()
+    end function m_inverse
+
+    function m_times_m(A, B)
+        
+
     end function m_times_m
 
     ! Matrix transposition

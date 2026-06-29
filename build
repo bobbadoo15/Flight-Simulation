@@ -1,0 +1,66 @@
+#!/bin/zsh
+
+# DISPLAY PROGRAM IMAGE (if you have an ASCII banner)
+cat image.txt
+
+# ============================================================
+#          Flight-Simulation Build, Compile, and Run
+#                      GFortran 90 | OOP
+# ============================================================
+
+# ======= COMPILER =======
+GF=gfortran
+
+# ======= FLAGS =======
+
+
+# ======= DIRECTORIES =======
+BIN_DIR=build/bin
+MOD_DIR=build/mod
+OBJ_DIR=build/obj
+IN_DIR=input
+OUT_DIR=output
+SRC_DIR=src
+EXE=${BIN_DIR}/falcon
+
+# ---- Create bin, obj, and mod if they don't exist ----
+mkdir -p "$BIN_DIR" "$MOD_DIR" "$OBJ_DIR"
+
+# ======= COMPILE FORTRAN FILES =======
+echo
+echo "============================================================"
+echo " Compiling modules..."
+echo "============================================================"
+echo
+
+FILES=(
+  "${SRC_DIR}/units_m.f90"
+  "${SRC_DIR}/math/vector_m.f90"
+  "${SRC_DIR}/math/matrix_m.f90"
+  "${SRC_DIR}/math/euler_angles_m.f90"
+  "${SRC_DIR}/falcon.f90"
+)
+
+# Compile and link in one go (simple version)
+$GF -J "$MOD_DIR" -c "${FILES[@]}" -o "$EXE"
+
+echo
+echo "============================================================"
+echo " Linking..."
+echo "============================================================"
+echo
+
+# ======= RUN =======
+echo
+echo "============================================================"
+echo " Running FlightSim..."
+echo "============================================================"
+echo
+
+"$EXE"
+
+echo
+echo "============================================================"
+echo " Build Complete!"
+echo "============================================================"
+echo

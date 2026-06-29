@@ -1,12 +1,26 @@
-THIS IS STRICTLY NOTES ON CREATING A BATCH FILE AND HOW THEY FUNCTION
+THIS IS STRICTLY NOTES ON CREATING A BUILD FILE AND HOW THEY FUNCTION
+
+================================================================
+                             WINDOWS
+                        (.bat / batch file)
+================================================================
 
 ===== COMMENTS =====
 * 'REM' or '::': Used to make comments
 
 ===== DISPLAYING =====
 * 'echo <comment>': Used to display text during compiling files
+* 'echo.': Prints a blank line (note: no space between echo and the dot)
 * 'echo off': Stop displaying commands after this command
-* '@': Don't display this command ==> '@echo off
+* '@': Don't display this command ==> '@echo off'
+* 'type <filename>': Displays the contents of a text file
+    * Ex: type image.txt ==> prints ASCII art banner
+
+===== SCOPING =====
+* 'setlocal': Starts a local variable scope; variables set after this
+              only exist inside this script and don't leak into the shell
+* 'endlocal': Ends the local scope; variables set inside are discarded
+    * Always pair setlocal at the top with endlocal at the bottom
 
 ===== COMMANDS =====
 * Running commands in a windows terminal is the same in the batch file;
@@ -15,42 +29,264 @@ THIS IS STRICTLY NOTES ON CREATING A BATCH FILE AND HOW THEY FUNCTION
 * 'pause': Means 'Press any key to continue...'
 * 'mkdir build': Creates a directory
 * 'rmdir build': Removes a directory
-* 'rmdir /s build': Removes a directory and evertyhing inside it
-* 'del <filename>': Deletes a file 
-* 'dir': Displays the content in the current folder in the directory
-* 'gfortran -c <filename>.f90': Compiles that file
+* 'rmdir /s build': Removes a directory and everything inside it
+* 'del <filename>': Deletes a file
+* 'dir': Displays the content of the current folder in the directory
+
+===== GFORTRAN COMMANDS =====
+* 'gfortran -c <filename>.f90': Compiles that file into a .o object file
     * Creates .o and .mod files
-* 'gfortran <file path> -J <file path>': Tells fortran where to put generated .mod files
-* 'gfortran <file path> -I <file path>': Tells fortran where to look for files when compiling
-* 'gfortran <> -o <>': Outputs a file in a path/filename
+* 'gfortran <file path> -J <mod path>': Tells gfortran where to PUT generated .mod files
+* 'gfortran <file path> -I <mod path>': Tells gfortran where to LOOK for .mod files when compiling
+* 'gfortran <file path> -o <output path>': Outputs the compiled binary to a given path/filename
+* 'gfortran <files...> -J <mod> -I <mod> -o <exe>': Full compile + link in one command
 
 ===== VARIABLES =====
-* 'set <variable name>': Creates a variable
-    * Ex: set EXE=FlightSim.exe ==> echo %EXE% ==> Output is FlightSim.exe
-* "&<variable name>&': Used when stating a variable
+* 'set <NAME>=<value>': Creates a variable (no spaces around =)
+    * Ex: set EXE=FlightSim.exe
+* '%<NAME>%': Used to READ / expand a variable
+    * Ex: echo %EXE% ==> Output is FlightSim.exe
+* Variables can reference other variables:
+    * Ex: set EXE_DIR=%BIN_DIR%\falcon.exe
 
 ===== CONDITIONS =====
-* 'if &...& == ... ()': Conditional syntax
+* 'if %VAR% == value (...)': Conditional syntax
+* 'if not exist <path> mkdir <path>': Create a directory only if it doesn't exist
+    * Ex: if not exist build\bin mkdir build\bin
+* 'if %ERRORLEVEL% neq 0 (...)': Check if a command failed
 
 ===== LOGIC =====
 * '==': Equals
 * 'neq': Not equal to
 * 'not exist': Something does not exist
-* '... > ...': Output information goes somewhere
-* 'echo ... >> <filename>': Appending information at the end of a file
+* '... > <file>': Redirect output to a file (overwrites)
+* 'echo ... >> <filename>': Append output to the end of a file
+* '&&': Run next command only if previous command succeeded
+* '||': Run next command only if previous command failed
 
 ===== ERROR HANDLING =====
 * '0' = success
 * 'non-zero' = failure
-* '&errorlevel&': Contains info on if the compiler works or not
+* '%ERRORLEVEL%': Contains the return code of the last command
+    * Ex: if %ERRORLEVEL% neq 0 ( echo Compile failed! && exit /b 1 )
+* 'exit /b 1': Exit the batch file with error code 1 (non-zero = failure)
+* 'exit /b 0': Exit the batch file with success
 
 ===== LOOPS =====
-* 'for &&<random letter> in (<list name>) do (<actions>)': For loop
+* 'for %%f in (<list>) do (<actions>)': For loop
+    * '%%f' is the loop variable (use single % if typing directly in terminal)
+    * Ex: for %%f in (%FILES%) do ( gfortran -c %%f )
 
 ===== MISC =====
-* '... ^': Line continuation
-* '.o': Object file in binary
-* '.mod': Module file that contains a description of what goes on in the module file
+* '... ^': Line continuation (must be the very last char on the line)
+* '.o': Object file in binary (intermediate compile output)
+* '.mod': Module file that contains a description of the Fortran module
+* '.exe': Executable binary on Windows
+* Paths use backslash '\'
 
 ===== CALLING OTHER FILES =====
-* 'call <filename>': Calls another file outside of the batch file
+* 'call <filename>': Calls another batch file from within the current batch file
+    * Ex: call setup.bat
+
+
+================================================================
+                         MACOS SILICON
+                     (.zsh / zsh script)
+                   Native shell on M1/M2/M3
+================================================================
+
+===== GETTING STARTED =====
+* The first line of every zsh script must be the shebang:
+    #!/bin/zsh
+* Make the script executable before running it the first time:
+    chmod +x build.zsh
+* Run the script:
+    zsh ./build
+* zsh is the DEFAULT shell on all Apple Silicon Macs (M1/M2/M3)
+  The bash on macOS is outdated (version 3.2, from 2007) — always use zsh
+
+===== COMMENTS =====
+* '#': Used to make comments (everything after # on a line is ignored)
+    * Ex: # This is a comment
+
+===== DISPLAYING =====
+* 'echo "<comment>"': Used to display text during compiling
+* 'echo ""' or 'echo': Prints a blank line
+* 'cat <filename>': Displays the contents of a text file (equivalent to Windows 'type')
+    * Ex: cat image.txt
+* '2>/dev/null || true': Suppresses errors if the file doesn't exist
+    * Ex: cat image.txt 2>/dev/null || true
+
+===== SCOPING =====
+* zsh scripts already run in their own process scope by default;
+  variables do not leak into your terminal session when you run ./build.zsh
+* 'export <VAR>': Makes a variable visible to child processes (subshells)
+    * Ex: export GF=gfortran
+* Without 'export', the variable is only visible inside the current script
+
+===== COMMANDS =====
+* 'cd <directory>': Change directory
+* 'mkdir <dir>': Creates a directory
+* 'mkdir -p <dir>': Creates a directory AND any missing parent directories;
+                    does NOT error if the directory already exists
+    * Ex: mkdir -p build/bin build/mod build/obj
+* 'rm <filename>': Deletes a file
+* 'rm -rf <directory>': Removes a directory and everything inside it (be careful!)
+* 'ls': Displays the contents of the current directory (equivalent to Windows 'dir')
+* 'read "?Press any key to continue..."': Pauses and waits for user input
+    * Note: zsh uses 'read "?<prompt>"' syntax, not 'read -p'
+
+===== GFORTRAN COMMANDS =====
+* 'gfortran -c <filename>.f90': Compiles that file into a .o object file
+    * Creates .o and .mod files
+* 'gfortran <file path> -J <mod path>': Tells gfortran where to PUT generated .mod files
+* 'gfortran <file path> -I <mod path>': Tells gfortran where to LOOK for .mod files
+* 'gfortran <file path> -o <output path>': Outputs the compiled binary to a given path/filename
+* 'gfortran "${FILES[@]}" -J "$MOD_DIR" -I "$MOD_DIR" -o "$EXE"': Full compile + link
+    * No .exe extension needed on Mac
+
+===== VARIABLES =====
+* '<NAME>=<value>': Creates a variable (NO spaces around =, this is strict)
+    * Ex: GF=gfortran
+    * Ex: BIN_DIR=build/bin
+* '"$NAME"' or '"${NAME}"': Used to READ / expand a variable
+    * Always quote variables to handle spaces safely
+    * Ex: echo "$GF"  ==>  Output is gfortran
+    * Ex: "$EXE"  ==>  Runs the executable stored in EXE
+* Variables can reference other variables:
+    * Ex: EXE="${BIN_DIR}/falcon"
+* Paths use forward slash '/'
+
+===== ARRAYS =====
+* zsh arrays are 1-INDEXED (first element is index 1, not 0 like bash)
+* Define an array:
+    FILES=(
+      "${SRC_DIR}/units_m.f90"
+      "${SRC_DIR}/math/vector_m.f90"
+      "${SRC_DIR}/falcon.f90"
+    )
+* '"${FILES[@]}"': Expands ALL elements of the array
+    * Use this when passing the list to gfortran
+* '"${FILES[1]}"': Accesses the FIRST element (1-indexed in zsh)
+* '"${#FILES[@]}"': Number of elements in the array
+    * Ex: echo "${#FILES[@]}" ==> Output is 3
+
+===== CONDITIONS =====
+* 'if [[ condition ]]; then ... fi': Basic if statement (use double brackets in zsh)
+* 'if [[ ! -d "<path>" ]]; then mkdir -p "<path>"; fi': Create dir if it doesn't exist
+    * Note: mkdir -p already handles this, so you rarely need the check manually
+* 'if [[ $? -ne 0 ]]; then ... fi': Check if the last command failed
+    * '$?' holds the exit code of the last command (0 = success, non-zero = failure)
+* Common test flags (used inside [[ ]]):
+    * '-d <path>': True if path is a directory
+    * '-f <path>': True if path is a file
+    * '-e <path>': True if path exists (file or directory)
+    * '! <condition>': Negation (NOT)
+    * '-z "$VAR"': True if variable is empty
+    * '-n "$VAR"': True if variable is NOT empty
+
+===== LOGIC =====
+* '==': String equals (inside [[ ]])
+* '-eq': Numeric equals
+* '-ne': Not equal (numeric)
+* '-gt': Greater than (numeric)
+* '-lt': Less than (numeric)
+* '!=': String not equal
+* '... > <file>': Redirect output to a file (overwrites)
+* 'echo ... >> <filename>': Append output to the end of a file
+* '&&': Run next command only if previous command succeeded
+* '||': Run next command only if previous command failed
+* 'set -e': Put this near the top; causes the script to EXIT immediately if any
+             command fails — prevents silent failures in build scripts
+
+===== ERROR HANDLING =====
+* '$?': Holds the exit code of the last command
+    * 0 = success
+    * non-zero = failure
+* 'exit 1': Exit the script with error code 1 (failure)
+* 'exit 0': Exit the script with success
+* 'set -e': Auto-exit on any error (recommended at top of build scripts)
+* Checking after gfortran:
+    gfortran "${FILES[@]}" -J "$MOD_DIR" -o "$EXE"
+    if [[ $? -ne 0 ]]; then
+        echo "Compile failed!"
+        exit 1
+    fi
+* 'command -v <tool>': Checks if a tool is available (returns 0 if found)
+    * Ex:
+        if command -v gfortran &>/dev/null; then
+            echo "gfortran found"
+        else
+            echo "gfortran NOT found"
+        fi
+
+===== LOOPS =====
+* 'for f in "${FILES[@]}"; do ... done': Loop over an array
+    * Ex:
+        for f in "${FILES[@]}"; do
+            gfortran -c "$f" -J "$MOD_DIR"
+        done
+* 'for f in *.f90; do ... done': Loop over files matching a pattern
+
+===== MISC =====
+* '\': Line continuation (must be the very last character on the line, same as Windows ^)
+    * Ex:
+        gfortran \
+          "${SRC_DIR}/units_m.f90" \
+          -o "$EXE"
+* '.o': Object file in binary (intermediate compile output, same as Windows)
+* '.mod': Module file (same as Windows)
+* No '.exe' extension — executables on Mac have no extension; run as: ./falcon
+* 'chmod +x <script>': Makes a script executable (only needed once)
+* '#!': Shebang line — tells macOS which interpreter to use
+
+===== CALLING OTHER FILES =====
+* 'source <filename>' or '. <filename>': Runs another script IN the current shell
+    Variables defined in it are available afterward
+    * Ex: source setup.zsh
+* './<filename>': Runs another script as a separate process (its own scope)
+    * Ex: ./clean.zsh
+
+
+================================================================
+           SIDE-BY-SIDE QUICK REFERENCE
+================================================================
+
+PURPOSE                  | WINDOWS (.bat)                         | MACOS SILICON (.zsh)
+-------------------------|----------------------------------------|------------------------------------------
+Script start             | @echo off / setlocal                   | #!/bin/zsh  (then optionally: set -e)
+Comment                  | REM ... or :: ...                      | # ...
+Print text               | echo <text>                            | echo "<text>"
+Print blank line         | echo.                                  | echo ""
+Print file contents      | type image.txt                         | cat image.txt
+Set variable             | set NAME=value                         | NAME=value
+Read variable            | %NAME%                                 | "$NAME" or "${NAME}"
+Variable in path         | %BIN_DIR%\falcon.exe                   | "${BIN_DIR}/falcon"
+Path separator           | backslash  \                           | forward slash  /
+Executable extension     | .exe                                   | (none) — run as ./falcon
+Make directory           | mkdir build\bin                        | mkdir -p build/bin
+Make dir if not exist    | if not exist build\bin mkdir build\bin | mkdir -p build/bin  (no check needed)
+Remove directory         | rmdir /s build                         | rm -rf build
+Delete file              | del filename                           | rm filename
+List directory           | dir                                    | ls
+Change directory         | cd <dir>                               | cd <dir>
+Array / file list        | set FILES= ^ file1 ^ file2             | FILES=("file1" "file2")
+Expand array             | %FILES%                                | "${FILES[@]}"
+First array element      | (no true arrays — first item in list)  | "${FILES[1]}"  (zsh is 1-indexed)
+Array element count      | (no true arrays)                       | "${#FILES[@]}"
+For loop                 | for %%f in (%FILES%) do (...)          | for f in "${FILES[@]}"; do ...; done
+If condition             | if %VAR% == value (...)                | if [[ "$VAR" == "value" ]]; then ... fi
+Check dir exists         | if not exist <path>                    | if [[ ! -d "<path>" ]]
+Line continuation        | ^  (end of line)                       | \  (end of line)
+Error code variable      | %ERRORLEVEL%                           | $?
+Check tool available     | (no built-in equivalent)               | command -v <tool> &>/dev/null
+Exit with error          | exit /b 1                              | exit 1
+Exit with success        | exit /b 0                              | exit 0
+Call another script      | call other.bat                         | source other.zsh  or  ./other.zsh
+Scope control            | setlocal / endlocal                    | (automatic per-process; export to share)
+Suppress error output    | 2>nul                                  | 2>/dev/null
+Run if prev succeeded    | &&                                     | &&
+Run if prev failed       | ||                                     | ||
+Append to file           | echo text >> file.txt                  | echo "text" >> file.txt
+Redirect output to file  | command > file.txt                     | command > file.txt
+Auto-exit on any error   | (no clean equivalent)                  | set -e  (put near top of script)
