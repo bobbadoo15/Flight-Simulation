@@ -2,7 +2,8 @@
 
 module euler_angles_m
     use units_m
-    use vector_m
+    ! use vector_m
+    use matrix_m
     implicit none
 
     type rot_mat

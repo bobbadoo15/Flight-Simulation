@@ -1,66 +1,630 @@
 #!/bin/zsh
-
-# DISPLAY PROGRAM IMAGE (if you have an ASCII banner)
-cat image.txt
-
+#
 # ============================================================
 #          Flight-Simulation Build, Compile, and Run
-#                      GFortran 90 | OOP
+#                      GFortran | Fortran OOP
 # ============================================================
+#
+# Usage:
+#   ./build              # same as: ./build build debug
+#   ./build build [debug|release]
+#   ./build run          # run the already-built executable
+#   ./build clean        # remove all generated build artifacts
+#   ./build rebuild [debug|release]   # clean + build from scratch
+#
+# Features:
+#   * Incremental compilation (only recompiles changed sources)
+#   * Double precision project-wide (-fdefault-real-8)
+#   * Debug memory-safety flags (snan / sentinel init, FPE traps)
+#   * Ready-to-enable scaffolding for C sources, -cpp, and OpenMP
+#
+# ------------------------------------------------------------
 
-# ======= COMPILER =======
-GF=gfortran
+# 'set' hardens the script against silent failures:
+#   -e            exit immediately if any command returns non-zero
+#   -u            treat use of an unset variable as an error
+#   -o pipefail   a pipeline fails if ANY stage fails, not just the last
+set -euo pipefail
 
-# ======= FLAGS =======
+# ------------------------------------------------------------
+# PORTABILITY: zsh indexes arrays from 1 by default; bash from 0.
+# 'ksharrays' makes zsh use 0-based indexing like bash/ksh, so all the
+# array math below (e.g. SPINNER_FRAMES[i % N]) works identically under
+# both shells. 'emulate -L sh -o ...' is scoped, but we set it globally
+# here since the whole script assumes 0-based arrays.
+# The '[[ -n ${ZSH_VERSION-} ]]' guard means this is a no-op under bash.
+if [[ -n "${ZSH_VERSION-}" ]]; then
+  setopt ksharrays        # 0-based array indexing
+  setopt shwordsplit      # split unquoted vars on IFS, like bash
+fi
 
+# ============================================================
+#  PRETTY-PRINT: COLORS & STYLE
+# ============================================================
+# Colors are enabled only when:
+#   * stdout is a real terminal ( [ -t 1 ] ), AND
+#   * the NO_COLOR env var is not set (https://no-color.org convention).
+# This keeps logs clean when piped to a file or CI system.
+# Force on/off with:  COLOR=1 ./build   or   COLOR=0 ./build
+if [[ "${COLOR:-auto}" == "1" ]] || { [[ "${COLOR:-auto}" == "auto" ]] && [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]]; }; then
+  C_RESET=$'\033[0m'
+  # C_BOLD=$'\033[1m'
+  C_BOLD=''
+  C_DIM=$'\033[38;5;245m'
+  C_RED=$'\033[31m'
+  C_GREEN=$'\033[32m'
+  C_YELLOW=$'\033[33m'
+  C_BLUE=$'\033[38;5;39m'
+  C_MAGENTA=$'\033[35m'
+  C_CYAN=$'\033[36m'
+else
+  C_RESET="" C_BOLD="" C_DIM="" C_RED="" C_GREEN="" C_YELLOW=""
+  C_BLUE="" C_MAGENTA="" C_CYAN=""
+fi
 
-# ======= DIRECTORIES =======
-BIN_DIR=build/bin
-MOD_DIR=build/mod
-OBJ_DIR=build/obj
-IN_DIR=input
-OUT_DIR=output
-SRC_DIR=src
-EXE=${BIN_DIR}/falcon
+# The spinner is gated on the SAME conditions as color: it only animates
+# when stdout is a real terminal (colors non-empty). When piped to a file,
+# under NO_COLOR, or with COLOR=0, SPINNER_ON stays 0 and commands run
+# plainly with a single static status line — no \r animation to pollute logs.
+if [[ -n "${C_RESET}" ]]; then SPINNER_ON=1; else SPINNER_ON=0; fi
+# Escape 'save/restore cursor' and 'clear line' helpers (only used live).
+ESC_CLR=$'\033[2K'   # clear entire current line
+ESC_CR=$'\r'         # carriage return to column 0
 
-# ---- Create bin, obj, and mod if they don't exist ----
-mkdir -p "$BIN_DIR" "$MOD_DIR" "$OBJ_DIR"
+# ---- Styled status helpers ----
+# Each prints a fixed-width, colored tag followed by a message, e.g.
+#   [  CC  ] src/foo.c  ->  build/obj/foo.o
+# The %6s pads the tag to a fixed width so all arrows line up.
+say_info()  { printf "%s[%s  INFO%s]%s %s\n"  "${C_BOLD}" "${C_BLUE}"    "${C_RESET}${C_BOLD}" "${C_RESET}" "$*"; }
+say_ok()    { printf "%s[%s    OK%s]%s %s\n"  "${C_BOLD}" "${C_GREEN}"   "${C_RESET}${C_BOLD}" "${C_RESET}" "$*"; }
+say_warn()  { printf "%s[%s  WARN%s]%s %s\n"  "${C_BOLD}" "${C_YELLOW}"  "${C_RESET}${C_BOLD}" "${C_RESET}" "$*"; }
+say_err()   { printf "%s[%s ERROR%s]%s %s\n" "${C_BOLD}" "${C_RED}"     "${C_RESET}${C_BOLD}" "${C_RESET}" "$*" >&2; }
+say_skip()  { printf "%s[%s  SKIP%s]%s %s%s%s\n" "${C_BOLD}" "${C_DIM}" "${C_RESET}${C_BOLD}" "${C_RESET}" "${C_DIM}" "$*" "${C_RESET}"; }
 
-# ======= COMPILE FORTRAN FILES =======
-echo
-echo "============================================================"
-echo " Compiling modules..."
-echo "============================================================"
-echo
+# Print a compile action line: <tag> <src> -> <obj>, tag colored per kind.
+#   $1 = tag text (CC / FC / LD)   $2 = color   $3 = src   $4 = dest
+say_step() {
+  printf "%s[%s%6s%s]%s %s %s->%s %s\n" \
+    "${C_BOLD}" "${2}" "${1}" "${C_RESET}${C_BOLD}" "${C_RESET}" \
+    "${3}" "${C_DIM}" "${C_RESET}" "${4}"
+}
 
+# ============================================================
+#  CLI SPINNER
+# ============================================================
+# Braille animation frames — smooth and compact.
+SPINNER_FRAMES=('⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+
+# run_with_spinner <label> <logfile> <command...>
+#   Runs the command. If SPINNER_ON, animates a single in-place line
+#   "<spinner> <label>" using \r (no newline spam), then clears it and
+#   returns the command's exit status. Compiler output goes to <logfile>
+#   so a live build stays clean but errors can be shown on failure.
+#   When SPINNER_ON=0 (piped / NO_COLOR / CI), it just runs the command
+#   with output appended to the log and NO animation whatsoever.
+run_with_spinner() {
+  local label="$1" logfile="$2"; shift 2
+
+  if [[ "${VERBOSE}" -eq 1 ]]; then
+    # Verbose: stream gfortran output LIVE to the terminal while ALSO
+    # appending it to the log. No spinner (it would clash with the
+    # streamed text). 'tee -a' duplicates stdout+stderr to the log.
+    # PIPESTATUS/pipestatus[1] gives the compiler's exit code, not tee's,
+    # so a real compile failure is still detected correctly.
+    "$@" 2>&1 | tee -a "${logfile}"
+    # Get the COMPILER's exit code (first pipe stage), not tee's.
+    # zsh uses lowercase 'pipestatus'; bash uses 'PIPESTATUS'. Because we
+    # 'setopt ksharrays' at the top, zsh's pipestatus is 0-based here too,
+    # so index [0] is correct for both shells.
+    if [[ -n "${ZSH_VERSION-}" ]]; then
+      return "${pipestatus[0]}"
+    else
+      return "${PIPESTATUS[0]}"
+    fi
+  fi
+
+  if [[ "${SPINNER_ON}" -eq 0 ]]; then
+    # Non-interactive: run plainly, capture output, no animation.
+    "$@" >>"${logfile}" 2>&1
+    return $?
+  fi
+
+  # Interactive: launch the command in the background.
+  "$@" >>"${logfile}" 2>&1 &
+  local pid=$!
+  local i=0 frame
+
+  # Hide cursor during animation for a cleaner look.
+  printf '\033[?25l'
+  # Animate while the child process is alive.
+  # 'kill -0' tests whether the PID exists without sending a real signal.
+  while kill -0 "${pid}" 2>/dev/null; do
+    frame="${SPINNER_FRAMES[$(( i % ${#SPINNER_FRAMES[@]} ))]}"
+    # \r returns to col 0; we overwrite the SAME line every tick.
+    printf '%s%s[%s  %s%s]%s %s' "${ESC_CR}" "${C_BOLD}" "${C_CYAN}" \
+      "${frame}" "${C_RESET}${C_BOLD}" "${C_RESET}" "${label}"
+    i=$(( i + 1 ))
+    sleep 0.08
+  done
+
+  # Reap the child and grab its true exit status.
+  # NOTE: do NOT name this 'status' — in zsh 'status' is a read-only
+  # special variable (an alias for $?), and assigning to it aborts the
+  # script under 'set -e'. 'rc' is safe in both bash and zsh.
+  wait "${pid}"
+  local rc=$?
+
+  # Clear the spinner line and restore the cursor so the caller can
+  # print the final OK/ERROR status cleanly on that same row.
+  printf '%s%s\033[?25h' "${ESC_CR}" "${ESC_CLR}"
+  return "${rc}"
+}
+
+# Ensure the cursor is always restored even if the script is interrupted
+# (Ctrl-C) mid-spin. 'trap' runs the handler on INT/TERM/EXIT.
+_restore_cursor() { [[ "${SPINNER_ON}" -eq 1 ]] && printf '\033[?25h'; }
+trap _restore_cursor INT TERM EXIT
+
+# fail_build <what> <logfile>
+#   Print an error, dump the captured compiler output (which the spinner
+#   suppressed on-screen), and abort. Used when a compile/link step fails.
+fail_build() {
+  say_err "$1 failed. Compiler output:"
+  echo "${C_DIM}============================================================${C_RESET}"
+  cat "$2" 2>/dev/null || true
+  echo "${C_DIM}============================================================${C_RESET}"
+  exit 1
+}
+
+# ============================================================
+#  DISPLAY PROGRAM BANNER (optional)
+# ============================================================
+# '[[ -f image.txt ]]' tests that image.txt exists as a regular file.
+# '&&' runs 'cat' only if that test passed, so a missing banner won't
+# abort the whole build under 'set -e'.
+[[ -f image.txt ]] && cat image.txt
+
+# ============================================================
+#  COMPILER
+# ============================================================
+# '${FC:-gfortran}' means: use the environment variable FC if it is set,
+# otherwise fall back to "gfortran". Lets you override with:  FC=ifort ./build
+FC="${FC:-gfortran}"
+# C compiler — only used if you enable the C scaffolding below.
+CC="${CC:-gcc}"
+
+# ============================================================
+#  PROJECT LAYOUT
+# ============================================================
+PROJECT_NAME="falcon"
+SRC_DIR="src"                         # root of the Fortran source tree
+COMMON_DIR="common"                   # shared modules (used by C scaffolding example)
+BIN_DIR="generate/bin"                # final executable lands here
+OBJ_DIR="generate/obj"                # .o object files
+MOD_DIR="generate/mod"                # .mod module-interface files
+IN_DIR="input"                        # runtime input files (reserved)
+OUT_DIR="output"                      # runtime output files (reserved)
+EXE="${BIN_DIR}/${PROJECT_NAME}"      # e.g. build/bin/falcon
+BUILD_LOG="generate/last_build.log"   # captured compiler/linker output
+
+# ============================================================
+#  ARGUMENT PARSING
+# ============================================================
+# We scan ALL args and pull out two kinds of "anywhere" tokens:
+#   * -v / --verbose        -> turn on live compiler output (VERBOSE=1)
+#   * debug / release        -> pick the build MODE
+# Whatever is left over keeps its order, so the first remaining word is
+# the ACTION (build/run/clean/rebuild). This lets you write:
+#   ./build                 normal (release) build
+#   ./build debug           debug build          (mode keyword, no action)
+#   ./build rebuild debug   clean + debug build
+#   ./build run             run the executable
+#   ./build debug -v        debug build, streaming output
+#
+# MODE defaults to 'release' so a bare './build' is the fast, normal build.
+VERBOSE=0
+MODE="release"
+_args=()
+for _a in "$@"; do
+  case "${_a}" in
+    -v|--verbose)   VERBOSE=1 ;;
+    debug|release)  MODE="${_a}" ;;        # mode keyword, consumed here
+    *)              _args+=("${_a}") ;;    # everything else stays positional
+  esac
+done
+# Reset the positional parameters ($1, ...) to the leftover (action) args.
+# The '${_args[@]+...}' guard avoids an unbound-variable error under
+# 'set -u' when nothing is left after stripping flags/mode keywords.
+set -- ${_args[@]+"${_args[@]}"}
+
+# ============================================================
+#  COMPILER FLAGS
+# ============================================================
+# Warnings — catch bad code early. Each flag is one array element.
+WARN_FLAGS=(
+  -Wall                     # most common warnings
+  -Wextra                   # additional warnings beyond -Wall
+  -Wimplicit-interface      # warn when calling without an explicit interface
+  -Wunderflow               # warn on floating underflow in constants
+  -Wcharacter-truncation    # warn when assigning to a too-short character var
+  -Wsurprising              # warn on surprising / likely-unintended code
+  -Waliasing                # warn about dummy-argument aliasing
+  -fimplicit-none           # forbid implicit typing project-wide
+)
+
+# Precision — promote every default 'real' to 8 bytes (double) across the
+# WHOLE project (compile AND link). Matches the lab convention and keeps
+# numerics consistent for integration, matrix ops, and long trajectories.
+# NOTE: if you also use explicit real(rk) kinds, ensure rk == real64 in
+# units_m so explicit and promoted kinds agree.
+PRECISION_FLAGS=(
+  -fdefault-real-8
+)
+
+# Debug — slow but safe; ideal while developing a flight sim.
+DEBUG_FLAGS=(
+  -g                                    # emit debug symbols (for gdb/lldb)
+  -O0                                   # no optimization (accurate line info)
+  -fcheck=all                           # runtime checks: array bounds, etc.
+  -fbacktrace                           # print a stack trace on a crash
+  -ffpe-trap=invalid,zero,overflow      # trap NaN, div-by-zero, overflow
+  # ---- Memory-safety init (lab pattern) ----
+  # Fill uninitialized reals with signaling NaN and integers with an
+  # obvious sentinel, so using an uninitialized variable blows up
+  # immediately instead of silently propagating garbage.
+  -finit-real=snan
+  -finit-integer=-999
+)
+
+# Release — fast; strip the runtime checks and NaN-init.
+RELEASE_FLAGS=(
+  -O2                       # solid optimization without aggressive risk
+)
+
+# Language standard. Fortran OOP (type-bound procedures) needs >= 2003;
+# f2008 is a safe, widely-supported baseline.
+#
+# -ffree-line-length-none removes the default 132-column line limit for
+# free-form (.f90) source. Without it, gfortran TRUNCATES any line past
+# column 132 and (with warnings-as-errors) fails with "Line truncated".
+# Long array constructors like scaling_factors_str in units_m.f90 need
+# this. Alternative: -ffree-line-length-132 keeps the limit but is
+# stricter; 'none' is the common, hassle-free choice.
+STD_FLAGS=(
+  -std=f2008
+  -ffree-line-length-none
+)
+
+# Module path flags — THE fix for the ".mod not found" error class:
+#   -J<dir>   WRITE generated .mod files into <dir>
+#   -I<dir>   READ  .mod files from <dir> when compiling later files
+# Both point at MOD_DIR so each file can see modules compiled before it.
+MOD_FLAGS=(
+  -J"${MOD_DIR}"
+  -I"${MOD_DIR}"
+)
+
+# ---- OPTIONAL: OpenMP parallelism (lab pattern) ----------------------
+# Uncomment to enable multithreading (e.g. for CFD / physics loops).
+# Must be present at BOTH compile and link, so it lives in COMMON_FLAGS.
+# OPENMP_FLAGS=(-fopenmp)
+OPENMP_FLAGS=()
+
+# ---- OPTIONAL: C preprocessing + platform defines (lab pattern) ------
+# Uncomment to enable #ifdef-style conditional compilation in Fortran.
+# CPP_FLAGS=(-cpp -DPLATFORM_MAC)
+CPP_FLAGS=()
+
+# Flags common to every compile step.
+COMMON_FLAGS=(
+  "${WARN_FLAGS[@]}"
+  "${STD_FLAGS[@]}"
+  "${PRECISION_FLAGS[@]}"
+  "${MOD_FLAGS[@]}"
+  "${OPENMP_FLAGS[@]}"
+  "${CPP_FLAGS[@]}"
+)
+
+# ============================================================
+#  SOURCE FILES — DEPENDENCY ORDER MATTERS
+# ============================================================
+# A module MUST be compiled before any file that 'use's it.
+# Base kinds/constants first, then math modules, then the main program.
+# Dependency order here: units_m -> point_m -> vector_m -> matrix_m ->
+# euler_angles_m -> falcon. vector_m uses point_m, so point_m precedes it.
 FILES=(
-  "${SRC_DIR}/units_m.f90"
+  "${SRC_DIR}/math/units_m.f90"
+  "${SRC_DIR}/math/point_m.f90"      # vector_m 'use's point_m, so it must come first
   "${SRC_DIR}/math/vector_m.f90"
   "${SRC_DIR}/math/matrix_m.f90"
   "${SRC_DIR}/math/euler_angles_m.f90"
-  "${SRC_DIR}/falcon.f90"
+  "${SRC_DIR}/${PROJECT_NAME}.f90"
 )
 
-# Compile and link in one go (simple version)
-$GF -J "$MOD_DIR" -c "${FILES[@]}" -o "$EXE"
+# ---- OPTIONAL: C sources (lab pattern) -------------------------------
+# When you add UDP/MAVLink-style networking, list C sources here and
+# enable the compile_c step in compile(). Compiled with $CC into OBJ_DIR,
+# then linked together with the Fortran objects.
+# C_FILES=(
+#   "${COMMON_DIR}/udp_nonblock.c"
+# )
+C_FILES=()
+# C compile flags (note: -I paths for headers, NOT module dirs).
+C_FLAGS=(-c -I "${OBJ_DIR}")
 
-echo
-echo "============================================================"
-echo " Linking..."
-echo "============================================================"
-echo
+# ============================================================
+#  HELPER FUNCTIONS
+# ============================================================
 
-# ======= RUN =======
-echo
-echo "============================================================"
-echo " Running FlightSim..."
-echo "============================================================"
-echo
+print_header() {
+  # $1 is the first argument passed to this function.
+  # Prints a cyan boxed banner. The line of '=' is a fixed 60 chars.
+  local line="============================================================"
+  echo
+  printf "%s%s%s\n" "${C_BLUE}${C_BOLD}" "${line}" "${C_RESET}"
+  local title="$1"
+  local width=60
+  local pad=$(( (width - ${#title}) / 2 ))
+  (( pad < 0 )) && pad=0
+  printf "%s%*s%s%s\n" "${C_BLUE}${C_BOLD}" "$pad" "" "${title}" "${C_RESET}"
+  printf "%s%s%s\n" "${C_BLUE}${C_BOLD}" "${line}" "${C_RESET}"
+  echo
+}
 
-"$EXE"
+check_compiler() {
+  # 'command -v' returns success if the compiler is on PATH.
+  # We redirect its output to /dev/null since we only care pass/fail.
+  if ! command -v "${FC}" >/dev/null 2>&1; then
+    say_err "compiler '${FC}' not found on PATH."
+    exit 1
+  fi
+  say_info "Compiler: ${C_BOLD}$(command -v "${FC}")${C_RESET}"
+}
 
-echo
-echo "============================================================"
-echo " Build Complete!"
-echo "============================================================"
-echo
+check_sources() {
+  # Verify every source file exists before we start compiling,
+  # so we fail fast with a clear message instead of a cryptic error.
+  local missing=0
+  for f in "${FILES[@]}"; do
+    if [[ ! -f "${f}" ]]; then
+      say_err "missing source file: ${f}"
+      missing=1
+    fi
+  done
+  return "${missing}"
+}
+
+setup_dirs() {
+  # -p: create parents as needed and don't complain if they exist.
+  mkdir -p "${BIN_DIR}" "${OBJ_DIR}" "${MOD_DIR}" "${IN_DIR}" "${OUT_DIR}"
+}
+
+clean() {
+  print_header "Cleaning build artifacts"
+  # Remove the generated build tree entirely.
+  rm -rf "${BIN_DIR}" "${OBJ_DIR}" "${MOD_DIR}"
+  # Also sweep any stray module/object files left in the tree.
+  #   -type f            only files
+  #   \( ... -o ... \)   grouped OR of name patterns
+  find . -type f \( -name "*.mod" -o -name "*.smod" -o -name "*.o" \) -delete
+  say_ok "Clean complete."
+}
+
+# ------------------------------------------------------------
+#  INCREMENTAL COMPILATION
+# ------------------------------------------------------------
+# Global flag: once ANY file recompiles, every file after it in the
+# dependency order must recompile too, because a changed module
+# invalidates the .mod interface that later files were built against.
+# We seed it 'false' and flip it 'true' the first time a source is stale.
+COMPILE_ALL="false"
+
+# needs_compile <src> <obj> [mod]
+#   Returns success (0) if the object is missing, its .mod is missing,
+#   or the source is newer (-nt) than the object/mod. Once COMPILE_ALL
+#   is set, always returns success so downstream files rebuild.
+needs_compile() {
+  local src="$1" obj="$2" mod="${3:-}"
+  [[ "${COMPILE_ALL}" == "true" ]] && return 0
+  [[ ! -f "${obj}" ]] && return 0
+  [[ "${src}" -nt "${obj}" ]] && return 0
+  if [[ -n "${mod}" ]]; then
+    [[ ! -f "${mod}" ]] && return 0
+    [[ "${src}" -nt "${mod}" ]] && return 0
+  fi
+  return 1
+}
+
+compile() {
+  # Pick the mode-specific flag set.
+  local mode_flags=()
+  case "${MODE}" in
+    debug)   mode_flags=("${DEBUG_FLAGS[@]}") ;;
+    release) mode_flags=("${RELEASE_FLAGS[@]}") ;;
+    *)
+      echo "Error: unknown mode '${MODE}'. Use 'debug' or 'release'."
+      exit 1
+      ;;
+  esac
+
+  print_header "Compiling Source Files ('${MODE}' Mode)"
+
+  # Let the user know output will stream when verbose is on.
+  [[ "${VERBOSE}" -eq 1 ]] && say_info "Verbose mode: streaming compiler output live."
+
+  # Truncate the build log so it only holds THIS build's output.
+  : > "${BUILD_LOG}"
+
+  # ---- Pretty-print bookkeeping ----
+  # SECONDS is a built-in that counts elapsed seconds; reset to 0 to time
+  # the whole build. 'compiled' / 'skipped' feed the summary at the end.
+  local build_start=${SECONDS}
+  local compiled=0 skipped=0
+  # Count total steps so we can show progress like [ 3/6 ].
+  local total=$(( ${#C_FILES[@]} + ${#FILES[@]} ))
+  local idx=0
+
+  # Collect object files (both C and Fortran) for the link step.
+  local obj_files=()
+
+  # ---- OPTIONAL: compile C sources first (lab pattern) ----
+  # C has no module dependencies, so plain timestamp checks suffice.
+  local csrc cbase cobj t0
+  for csrc in "${C_FILES[@]}"; do
+    idx=$(( idx + 1 ))
+    cbase="$(basename "${csrc}" .c)"
+    cobj="${OBJ_DIR}/${cbase}.o"
+    if needs_compile "${csrc}" "${cobj}"; then
+      COMPILE_ALL="true"
+      t0=${SECONDS}
+      say_step "CC" "${C_MAGENTA}" "${C_DIM}[${idx}/${total}]${C_RESET} ${csrc}" "${cobj}"
+      # Spinner animates during the compile; log captures output.
+      # '|| fail_build ...' catches a nonzero status without set -e aborting.
+      run_with_spinner "compiling ${cbase}.c" "${BUILD_LOG}" \
+        "${CC}" "${C_FLAGS[@]}" -o "${cobj}" "${csrc}" \
+        || fail_build "C compile of ${csrc}" "${BUILD_LOG}"
+      say_ok "${cbase}.o ${C_DIM}(compiled in $(( SECONDS - t0 ))s)${C_RESET}"
+      compiled=$(( compiled + 1 ))
+    else
+      say_skip "[${idx}/${total}] ${csrc} (up to date)"
+      skipped=$(( skipped + 1 ))
+    fi
+    obj_files+=("${cobj}")
+  done
+
+  # ---- Compile Fortran sources in dependency order ----
+  local src base obj mod
+  for src in "${FILES[@]}"; do
+    idx=$(( idx + 1 ))
+    base="$(basename "${src}" .f90)"     # strip dir + .f90 extension
+    obj="${OBJ_DIR}/${base}.o"
+    mod="${MOD_DIR}/${base}.mod"          # may or may not exist per file
+
+    if needs_compile "${src}" "${obj}" "${mod}"; then
+      # First stale file forces every subsequent file to rebuild.
+      COMPILE_ALL="true"
+      t0=${SECONDS}
+      say_step "FC" "${C_BLUE}" "${C_DIM}[${idx}/${total}]${C_RESET} ${src}" "${obj}"
+      # -c = compile only (no linking). -o names THIS object file.
+      # Spinner shows live progress; output is logged, not streamed.
+      run_with_spinner "compiling ${base}.f90" "${BUILD_LOG}" \
+        "${FC}" "${COMMON_FLAGS[@]}" "${mode_flags[@]}" -c "${src}" -o "${obj}" \
+        || fail_build "compile of ${src}" "${BUILD_LOG}"
+      say_ok "${base}.o ${C_DIM}(compiled in $(( SECONDS - t0 ))s)${C_RESET}"
+      compiled=$(( compiled + 1 ))
+    else
+      say_skip "[${idx}/${total}] ${src} (up to date)"
+      skipped=$(( skipped + 1 ))
+    fi
+    obj_files+=("${obj}")
+  done
+
+  # ---- Link all objects into the executable (NO -c) ----
+  # Relink whenever anything recompiled, or if the exe is missing.
+  if [[ "${COMPILE_ALL}" == "true" || ! -x "${EXE}" ]]; then
+    print_header "Linking Executable"
+    t0=${SECONDS}
+    say_step "LD" "${C_YELLOW}" "${#obj_files[@]} objects" "${EXE}"
+    # Link flags mirror precision/OpenMP so runtime libs match.
+    run_with_spinner "linking ${PROJECT_NAME}" "${BUILD_LOG}" \
+      "${FC}" "${PRECISION_FLAGS[@]}" "${OPENMP_FLAGS[@]}" "${mode_flags[@]}" \
+      "${obj_files[@]}" -o "${EXE}" \
+      || fail_build "link" "${BUILD_LOG}"
+    say_ok "Linked ${C_BOLD}${EXE}${C_RESET} ${C_DIM}(in $(( SECONDS - t0 ))s)${C_RESET}"
+  else
+    say_skip "Nothing to relink — executable is up to date: ${EXE}"
+  fi
+
+  # ---- Build summary ----
+  print_header "Build Summary"
+  say_ok   "Compiled : ${compiled}"
+  say_skip "Skipped  : ${skipped}"
+  say_info "Mode     : ${MODE}"
+  say_info "Total    : $(( SECONDS - build_start ))s"
+}
+
+run() {
+  # -x tests that the file exists AND is executable.
+  if [[ ! -x "${EXE}" ]]; then
+    say_err "executable not found: ${EXE}"
+    say_info "Build it first:  ./build build"
+    exit 1
+  fi
+  print_header "Running ${PROJECT_NAME}"
+  "${EXE}"
+}
+
+rebuild() {
+  clean
+  setup_dirs
+  check_sources
+  compile
+}
+
+usage() {
+  cat <<EOF
+Usage:
+  ./build                 Normal (release, optimized) build  [default]
+  ./build debug           Debug build (checks, traces, no optimization)
+  ./build run             Run the built executable
+  ./build clean           Remove all build artifacts
+  ./build rebuild         Clean, then build (add 'debug' for a debug rebuild)
+
+Mode keywords (may appear anywhere):
+  release   Optimized, no runtime checks — fast. This is the default.
+  debug     -O0 with bounds checks, FP traps, backtraces, NaN-init.
+
+Options:
+  -v, --verbose   Stream gfortran output live for every file (no spinner).
+                  Great for inspecting warnings while refining code.
+                  May be placed anywhere in the argument list.
+
+Environment:
+  FC=<compiler>   Override the Fortran compiler (default: gfortran)
+  CC=<compiler>   Override the C compiler (default: gcc)
+  COLOR=0|1       Force color/spinner off or on (default: auto-detect)
+
+Examples:
+  ./build                 normal build
+  ./build debug           debug build
+  ./build rebuild debug   clean + debug build
+  ./build debug -v        debug build, streaming compiler output
+  ./build run             run falcon
+EOF
+}
+
+# ============================================================
+#  MAIN
+# ============================================================
+# First CLI arg is the action; default to "build" when none is given.
+ACTION="${1:-build}"
+
+check_compiler
+
+case "${ACTION}" in
+  build)
+    setup_dirs
+    check_sources
+    compile
+    ;;
+  run)
+    run
+    ;;
+  clean)
+    clean
+    ;;
+  rebuild)
+    rebuild
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    say_err "unknown action '${ACTION}'."
+    echo
+    usage
+    exit 1
+    ;;
+esac
+
+print_header "Compiling Process Complete!"

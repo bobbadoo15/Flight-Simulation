@@ -1,12 +1,18 @@
 !! This module contains matrix operations
 module matrix_m
-    use units_m
-    use point_m
-    use vector_m
-    implicit none
+    use units_m, only: rk, eps
+    use point_m, only: point
+    use vector_m, only: vector
+    private
+
+    public :: matrix
+    public :: operator(*), operator(/), operator(+), operator(-)
+    public :: operator(.inv.), operator(.t.)
 
     ! ID matrix - reshape converts 1d array into 3d array, filling the columns first
-    real, dimension(3,3) :: id_mat = reshape([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], shape=[3,3])
+    real(rk), dimension(3,3), parameter :: id_mat(3,3) = reshape([ 1.0_rk, 0.0_rk, 0.0_rk, &
+                                                                   0.0_rk, 1.0_rk, 0.0_rk, &
+                                                                   0.0_rk, 0.0_rk, 1.0_rk  ], [3,3])
 
     type :: matrix
         real(rk), dimension(3,3) :: mat
