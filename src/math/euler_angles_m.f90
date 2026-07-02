@@ -1,14 +1,17 @@
-!! This module will contain functions for working with Euler angles.
-
 module euler_angles_m
     use units_m
-    ! use vector_m
+    use vector_m
     use matrix_m
     implicit none
 
     type rot_mat
-        real, dimension(3,3) :: mat
-    contains        
+        real(rk), dimension(3,3) :: mat
+    contains
+        procedure :: rot_inv => rotation_matrix_inverse
+        procedure :: rot_t   => rotation_matrix_transpose
+        procedure :: z_rot   => z_rotation_matrix
+        procedure :: y_rot   => y_rotation_matrix
+        procedure :: x_rot   => x_rotation_matrix
     end type rot_mat
 
 contains
@@ -17,66 +20,93 @@ contains
     !!                SUBROUTINES
     !! =========================================
 
-    subroutine rotation_matrix(m)
-        class(rot_mat), intent(inout) :: m
-        
+    subroutine rotation_matrix(v, phid, thetad, psid, transformation_matrix)
+        ! Converts from original to rotated state using euler angles
+        class(vector), intent(in)  :: v
+        type(vector),  intent(out) :: transformation_matrix
+        type(matrix)               :: m
+        real(rk), intent(in)       :: phid, thetad, psid
+        real(rk)                   :: phir, thetar, psir, &
+                                      c_phi, c_psi, c_theta, &
+                                      s_phi, s_psi, s_theta
+        phir    = phid * d2r
+        thetar  = thetad * d2r
+        psir    = psid * d2r
+        c_phi   = cos(phir)
+        c_psi   = cos(psir)
+        c_theta = cos(thetar)
+        s_phi   = sin(phir)
+        s_psi   = sin(psir)
+        s_theta = sin(thetar)
+        m = matrix((c_theta*c_psi), (c_theta*s_psi), (-s_theta), &
+                   ((s_phi*s_theta*c_psi) - (c_phi*s_psi)), ((s_phi*s_theta*s_psi) + (c_phi*c_psi)), (s_phi*c_theta), &
+                   ((c_phi*s_theta*c_psi) + (s_phi*s_psi)), ((c_phi*s_theta*s_psi) - (s_phi*c_psi)), (c_phi*c_theta))
+        ! transformation_matrix = m_times_v(m, v)
+        transformation_matrix = m*v
     end subroutine rotation_matrix
 
-    subroutine rotation_matrix_transpose(m)
-        class(rot_mat), intent(inout) :: m
+    subroutine rotation_matrix_inverse(self)
+        class(rot_mat), intent(inout) :: self
+    end subroutine rotation_matrix_inverse
+
+    subroutine rotation_matrix_transpose(self)
+        class(rot_mat), intent(inout) :: self
     end subroutine rotation_matrix_transpose
 
     !! =========================================
-    !!                 FUNCTIONS
+    !!           INDIVIDUAL ROTATIONS
     !! =========================================
 
     ! Function that first rotates about the z-axis of the base coordinate system by the azimuth angle, psi = phi_z; 0 <= psi <= 360, order 1
-    function z_rotation_matrix(psid) result(z_mat)
-        real, intent(in)     :: psid       ! psi in degrees
-        real, dimension(3,3) :: z_mat
-        real                 :: s, c, psir ! psi in radians
+    function z_rotation_matrix(self, psid) result(z_mat)
+        class(rot_mat), intent(in) :: self
+        real(rk), intent(in)       :: psid       ! psi in degrees
+        real(rk)                   :: s, c, psir ! psi in radians
+        real(rk), dimension(3,3)   :: z_mat
         ! Error handling for angle range
-        if ((psid >= 0.0) .and. (psid <= 360.0)) then
+        if ((psid >= 0.0_rk) .and. (psid <= 360.0_rk)) then
             psir = psid * d2r
             s = sin(psir)
             c = cos(psir)
-            z_mat = reshape([c, -s, 0.0, s, c, 0.0, 0.0, 0.0, 1.0], shape=[3,3])
+            z_mat = reshape([c, -s, 0.0_rk, s, c, 0.0_rk, 0.0_rk, 0.0_rk, 1.0_rk], shape=[3,3])
         else
-            z_mat = 0.0
+            z_mat = 0.0_rk
             write (*,*) "The azimuth angle is not in the range between 0 and 360."            
         end if
     end function z_rotation_matrix
 
     ! Function that rotates after the z-axis, about the elevation (y-axis), of the base coordinate system by the elevation angle, theta = phi_y; -90 <= psi <= 90, order 2
-    function y_rotation_matrix(thetad) result(y_mat)
-        real, intent(in)     :: thetad       ! theta in degrees
-        real, dimension(3,3) :: y_mat
-        real                 :: s, c, thetar ! theta in radians
+    function y_rotation_matrix(self, thetad) result(y_mat)
+        class(rot_mat), intent(in) :: self
+        real(rk), intent(in)       :: thetad       ! theta in degrees
+        real(rk)                   :: s, c, thetar ! theta in radians
+        real(rk), dimension(3,3)   :: y_mat
         ! Error handling for angle range
-        if ((thetad >= -90.0) .and. (thetad <= 90.0)) then
+        if ((thetad >= -90.0_rk) .and. (thetad <= 90.0_rk)) then
             thetar = thetad * d2r
             s = sin(thetar)
             c = cos(thetar)
-            y_mat = reshape([c, 0.0, s, 0.0, 1.0, 0.0, -s, 0.0, c], shape=[3,3])
+            y_mat = reshape([c, 0.0_rk, s, 0.0_rk, 1.0_rk, 0.0_rk, -s, 0.0_rk, c], shape=[3,3])
         else
-            y_mat = 0.0
+            y_mat = 0.0_rk
             write (*,*) "The elevation angle is not in the range between -90 and 90."            
         end if
     end function y_rotation_matrix
 
     ! Function that rotates last about the x-axis of the base coordinate system by the bank angle, phi = phi_z; -180 <= phi <= 180, order 3
-    function x_rotation_matrix(phid) result(x_mat)
-        real, intent(in)     :: phid       ! phi in degrees
-        real, dimension(3,3) :: x_mat
-        real                 :: s, c, phir ! phi in radians
+    function x_rotation_matrix(self, phid) result(x_mat)
+        class(rot_mat), intent(in) :: self
+        real(rk), intent(in)       :: phid       ! phi in degrees
+        real(rk)                   :: s, c, phir ! phi in radians
+        real(rk), dimension(3,3)   :: x_mat
         ! Error handling for angle range
-        if ((phid >= -180.0) .and. (phid <= 180.0)) then
+        if ((phid >= -180.0_rk) .and. (phid <= 180.0_rk)) then
             phir = phid * d2r
             s = sin(phir)
             c = cos(phir)
-            x_mat = reshape([1.0, 0.0, 0.0, 0.0, c, -s, 0.0, s, c], shape=[3,3])
+            x_mat = reshape([1.0_rk, 0.0_rk, 0.0_rk, 0.0_rk, c, -s, 0.0_rk, s, c], shape=[3,3])
         else
-            x_mat = 0.0
+            x_mat = 0.0_rk
             write (*,*) "The bank angle is not in the range between -180 and 180."            
         end if
     end function x_rotation_matrix

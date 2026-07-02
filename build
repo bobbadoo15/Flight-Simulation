@@ -170,9 +170,9 @@ trap _restore_cursor INT TERM EXIT
 #   suppressed on-screen), and abort. Used when a compile/link step fails.
 fail_build() {
   say_err "$1 failed. Compiler output:"
-  echo "${C_DIM}============================================================${C_RESET}"
+  echo "${C_DIM}========================================================================${C_RESET}"
   cat "$2" 2>/dev/null || true
-  echo "${C_DIM}============================================================${C_RESET}"
+  echo "${C_DIM}========================================================================${C_RESET}"
   exit 1
 }
 
@@ -359,13 +359,13 @@ C_FLAGS=(-c -I "${OBJ_DIR}")
 print_header() {
   # $1 is the first argument passed to this function.
   # Prints a cyan boxed banner. The line of '=' is a fixed 60 chars.
-  local line="============================================================"
-  echo
-  printf "%s%s%s\n" "${C_BLUE}${C_BOLD}" "${line}" "${C_RESET}"
+  local line="========================================================================"
   local title="$1"
-  local width=60
+  local width=72
   local pad=$(( (width - ${#title}) / 2 ))
   (( pad < 0 )) && pad=0
+  echo
+  printf "%s%s%s\n" "${C_BLUE}${C_BOLD}" "${line}" "${C_RESET}"
   printf "%s%*s%s%s\n" "${C_BLUE}${C_BOLD}" "$pad" "" "${title}" "${C_RESET}"
   printf "%s%s%s\n" "${C_BLUE}${C_BOLD}" "${line}" "${C_RESET}"
   echo

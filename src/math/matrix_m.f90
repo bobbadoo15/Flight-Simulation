@@ -3,28 +3,29 @@ module matrix_m
     use units_m, only: rk, eps
     use point_m, only: point
     use vector_m, only: vector
+    implicit none
     private
 
-    public :: matrix
+    public :: matrix, id_mat
     public :: operator(*), operator(/), operator(+), operator(-)
     public :: operator(.inv.), operator(.t.)
 
     ! ID matrix - reshape converts 1d array into 3d array, filling the columns first
-    real(rk), dimension(3,3), parameter :: id_mat(3,3) = reshape([ 1.0_rk, 0.0_rk, 0.0_rk, &
-                                                                   0.0_rk, 1.0_rk, 0.0_rk, &
-                                                                   0.0_rk, 0.0_rk, 1.0_rk  ], [3,3])
+    real(rk), dimension(3,3), parameter :: id_mat = reshape([ 1.0_rk, 0.0_rk, 0.0_rk, &
+                                                              0.0_rk, 1.0_rk, 0.0_rk, &
+                                                              0.0_rk, 0.0_rk, 1.0_rk  ], [3,3])
 
     type :: matrix
         real(rk), dimension(3,3) :: mat
     contains
-        procedure :: matmult     => m_times_m
-        procedure :: trans       => m_transpose
-        procedure :: inv         => m_inverse
-        procedure :: init        => m_init
-        procedure :: printmat    => m_print
-        procedure :: trace       => m_trace
-        procedure :: det         => m_determinant
-        procedure :: adj         => m_adjugate
+        procedure :: matmult  => m_times_m
+        procedure :: trans    => m_transpose
+        procedure :: inv      => m_inverse
+        procedure :: init     => m_init
+        procedure :: printmat => m_print
+        procedure :: trace    => m_trace
+        procedure :: det      => m_determinant
+        procedure :: adj      => m_adjugate
     end type matrix
 
     interface matrix
@@ -123,7 +124,6 @@ contains
         type(matrix), intent(in) :: m
         type(vector), intent(in) :: v
         type(vector)             :: v_prod
-
         v_prod%x = m%mat(1,1)*v%x + m%mat(1,2)*v%y + m%mat(1,3)*v%z
         v_prod%y = m%mat(2,1)*v%x + m%mat(2,2)*v%y + m%mat(2,3)*v%z
         v_prod%z = m%mat(3,1)*v%x + m%mat(3,2)*v%y + m%mat(3,3)*v%z
@@ -133,7 +133,6 @@ contains
         type(vector), intent(in) :: v
         type(matrix), intent(in) :: m
         type(vector)             :: v_prod
-
         v_prod%x = v%x*m%mat(1,1) + v%y*m%mat(2,1) + v%z*m%mat(3,1)
         v_prod%y = v%x*m%mat(1,2) + v%y*m%mat(2,2) + v%z*m%mat(3,2)
         v_prod%z = v%x*m%mat(1,3) + v%y*m%mat(2,3) + v%z*m%mat(3,3)
@@ -169,12 +168,6 @@ contains
 
         m_div%mat = m%mat / s
     end function m_div_s
-
-    !! ============================================
-    !!                  Rotations
-    !! ============================================
-
-
 
     !! ============================================
     !!               Matrix Relations

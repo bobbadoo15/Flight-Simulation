@@ -256,12 +256,6 @@ contains
         real(rk)                  :: mag
         type(vector)              :: v_norm
 
-        ! Check for if mag = 0 to avoid dividing by 0
-        if (mag == 0.0) then
-            write(*,*) "Error: Division by zero in v_normalize in vector_m"
-            stop
-        end if
-
         ! Check if the magnitude is smaller than the tolerance
         mag = this%mag()
         if (mag <= eps) then
@@ -273,10 +267,9 @@ contains
     end function v_normalize
 
     subroutine v_print(this)
-        ! Displays the vector
         class(vector), intent(in) :: this
-        write(*,'(A,F0.4,A,F0.4,A,F0.4,A)') &
-            '(', this%x, ', ', this%y, ', ', this%z, ')'
+        write(*,'(A,F20.15,A,F20.15,A,F20.15)') &
+            'x = ', this%x, '   y = ', this%y, '   z = ', this%z
     end subroutine v_print
 
 end module vector_m
