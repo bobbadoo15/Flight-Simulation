@@ -7,9 +7,11 @@ module euler_angles_m
     type rot_mat
         real(rk), dimension(3,3) :: mat
     contains
-        procedure :: z_rot => z_rotation_matrix
-        procedure :: y_rot => y_rotation_matrix
-        procedure :: x_rot => x_rotation_matrix
+        procedure :: rot   => rotation_matrix
+        procedure :: rot_z => z_rotation_matrix
+        procedure :: rot_y => y_rotation_matrix
+        procedure :: rot_x => x_rotation_matrix
+        procedure :: rates => rotation_rates
     end type rot_mat
 
 contains
@@ -18,8 +20,9 @@ contains
     !!                SUBROUTINES
     !! =========================================
 
-    subroutine rotation_matrix(v, phid, thetad, psid, mat_rot, m_out)
+    subroutine rotation_matrix(self, v, phid, thetad, psid, mat_rot, m_out)
         ! Converts from original to rotated state using euler angles
+        class(rot_mat), intent(in) :: self
         class(vector), intent(in)  :: v
         type(vector), intent(out)  :: mat_rot
         type(matrix), intent(out)  :: m_out
@@ -48,6 +51,36 @@ contains
         ! Export Transformed Matrix
         m_out = m
     end subroutine rotation_matrix
+
+    subroutine rotation_rates(self, w, phid, thetad, rates)
+        class(rot_mat), intent(in) :: self
+        class(vector), intent(in)  :: w
+        type(vector), intent(out)  :: rates
+        type(matrix)               :: m
+        real(rk), intent(in)       :: phid, thetad
+        real(rk)                   :: phir, thetar, &
+                                      c_phi, c_theta, &
+                                      s_phi, s_theta
+        ! Convert Deg to Rad
+        phir    = phid * d2r
+        thetar  = thetad * d2r
+        ! Compute angles
+        c_phi   = cos(phir)
+        c_theta = cos(thetar)
+        s_phi   = sin(phir)
+        s_theta = sin(thetar)
+        ! Check for cos()= +-90
+        if (abs(c_theta) <= eps) then
+            write(*,*) "Error: Singularity in rotation_rates — theta near 90 degrees"
+            stop
+        end if
+        ! Compute Transformation Matrix
+        m = matrix((1.0_rk), ((s_phi*s_theta)/c_theta), ((c_phi*s_theta)/c_theta), &
+                   (0.0_rk), (c_phi), (-s_phi), &
+                   (0.0_rk), (s_phi/c_theta), (c_phi/c_theta))
+        ! Compute New Matrix
+        rates = m*w
+    end subroutine rotation_rates
 
     !! =========================================
     !!           INDIVIDUAL ROTATIONS
