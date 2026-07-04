@@ -18,11 +18,11 @@ contains
     !!                SUBROUTINES
     !! =========================================
 
-    subroutine rotation_matrix(v, phid, thetad, psid, mat_rot)
+    subroutine rotation_matrix(v, phid, thetad, psid, mat_rot, m_out)
         ! Converts from original to rotated state using euler angles
         class(vector), intent(in)  :: v
         type(vector), intent(out)  :: mat_rot
-        ! type(matrix), intent(out)  :: m_out
+        type(matrix), intent(out)  :: m_out
         type(matrix)               :: m
         real(rk), intent(in)       :: phid, thetad, psid
         real(rk)                   :: phir, thetar, psir, &
@@ -46,7 +46,7 @@ contains
         ! Compute New Matrix
         mat_rot = m*v
         ! Export Transformed Matrix
-        ! m_out = m
+        m_out = m
     end subroutine rotation_matrix
 
     !! =========================================

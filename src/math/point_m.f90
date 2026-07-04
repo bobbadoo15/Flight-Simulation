@@ -118,7 +118,7 @@ contains
     subroutine p_print(p)
         ! Displays a given point
         class(point), intent(in) :: p
-        write(*,'(A,F0.4,A,F0.4,A,F0.4,A)') &
+        write(*,'(A,F20.15,A,F20.15,A,F20.15,A)') &
             '(', p%x, ', ', p%y, ', ', p%z, ')'
     end subroutine p_print
 

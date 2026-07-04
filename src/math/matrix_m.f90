@@ -244,9 +244,9 @@ contains
 
     subroutine m_print(this)
         class(matrix), intent(in) :: this
-        write(*,'(3F12.4)') this%mat(1,1), this%mat(1,2), this%mat(1,3)
-        write(*,'(3F12.4)') this%mat(2,1), this%mat(2,2), this%mat(2,3)
-        write(*,'(3F12.4)') this%mat(3,1), this%mat(3,2), this%mat(3,3)
+        write(*,'(3F20.15)') this%mat(1,1), this%mat(1,2), this%mat(1,3)
+        write(*,'(3F20.15)') this%mat(2,1), this%mat(2,2), this%mat(2,3)
+        write(*,'(3F20.15)') this%mat(3,1), this%mat(3,2), this%mat(3,3)
     end subroutine m_print
 
 end module matrix_m
