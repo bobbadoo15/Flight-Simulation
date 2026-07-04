@@ -18,8 +18,8 @@ src/math/vector_m.f90:169:12:
   169 |         if (s == 0.0_rk) then
       |            1
 Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
-src/math/matrix_m.f90:164:12:
+src/math/matrix_m.f90:165:12:
 
-  164 |         if (s == 0.0_rk) then
+  165 |         if (s == 0.0_rk) then
       |            1
 Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
