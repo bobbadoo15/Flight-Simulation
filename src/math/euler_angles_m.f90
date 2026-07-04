@@ -7,11 +7,9 @@ module euler_angles_m
     type rot_mat
         real(rk), dimension(3,3) :: mat
     contains
-        procedure :: rot_inv => rotation_matrix_inverse
-        procedure :: rot_t   => rotation_matrix_transpose
-        procedure :: z_rot   => z_rotation_matrix
-        procedure :: y_rot   => y_rotation_matrix
-        procedure :: x_rot   => x_rotation_matrix
+        procedure :: z_rot => z_rotation_matrix
+        procedure :: y_rot => y_rotation_matrix
+        procedure :: x_rot => x_rotation_matrix
     end type rot_mat
 
 contains
@@ -20,38 +18,36 @@ contains
     !!                SUBROUTINES
     !! =========================================
 
-    subroutine rotation_matrix(v, phid, thetad, psid, transformation_matrix)
+    subroutine rotation_matrix(v, phid, thetad, psid, mat_rot)
         ! Converts from original to rotated state using euler angles
         class(vector), intent(in)  :: v
-        type(vector),  intent(out) :: transformation_matrix
+        type(vector), intent(out)  :: mat_rot
+        ! type(matrix), intent(out)  :: m_out
         type(matrix)               :: m
         real(rk), intent(in)       :: phid, thetad, psid
         real(rk)                   :: phir, thetar, psir, &
                                       c_phi, c_psi, c_theta, &
                                       s_phi, s_psi, s_theta
+        ! Convert Deg to Rad
         phir    = phid * d2r
         thetar  = thetad * d2r
         psir    = psid * d2r
+        ! Compute angles
         c_phi   = cos(phir)
         c_psi   = cos(psir)
         c_theta = cos(thetar)
         s_phi   = sin(phir)
         s_psi   = sin(psir)
         s_theta = sin(thetar)
+        ! Compute Transformation Matrix
         m = matrix((c_theta*c_psi), (c_theta*s_psi), (-s_theta), &
                    ((s_phi*s_theta*c_psi) - (c_phi*s_psi)), ((s_phi*s_theta*s_psi) + (c_phi*c_psi)), (s_phi*c_theta), &
                    ((c_phi*s_theta*c_psi) + (s_phi*s_psi)), ((c_phi*s_theta*s_psi) - (s_phi*c_psi)), (c_phi*c_theta))
-        ! transformation_matrix = m_times_v(m, v)
-        transformation_matrix = m*v
+        ! Compute New Matrix
+        mat_rot = m*v
+        ! Export Transformed Matrix
+        ! m_out = m
     end subroutine rotation_matrix
-
-    subroutine rotation_matrix_inverse(self)
-        class(rot_mat), intent(inout) :: self
-    end subroutine rotation_matrix_inverse
-
-    subroutine rotation_matrix_transpose(self)
-        class(rot_mat), intent(inout) :: self
-    end subroutine rotation_matrix_transpose
 
     !! =========================================
     !!           INDIVIDUAL ROTATIONS

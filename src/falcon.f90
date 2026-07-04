@@ -7,14 +7,14 @@ program FlightAnalysisControlOperationsNetwork
     use euler_angles_m
     implicit none
 
-    type(vector) :: weight, w_rot
+    type(matrix) :: m
+    type(vector) :: weight, w_inv_rot, w_back
 
     !! ========== Euler Angle Problems ==========
-    ! Example 1.2.1
     weight = v_from_3_reals(0.0_rk, 0.0_rk, 100.0_rk)
-    ! call w%printvector()
-    call rotation_matrix(weight, 60.0_rk, 10.0_rk, 45.0_rk, w_rot)
-    ! call w_rot%printvector()
-
+    call rotation_matrix(weight, 60.0_rk, 10.0_rk, 45.0_rk, w_inv_rot, m)
+    call rotation_matrix_inverse(w_inv_rot, m, w_back)
+    call w_inv_rot%printvector() ! Prints rotated weight in body-fixed coordinates
+    call w_back%printvector()
 
 end program FlightAnalysisControlOperationsNetwork
