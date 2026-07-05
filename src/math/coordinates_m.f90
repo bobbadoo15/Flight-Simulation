@@ -7,7 +7,8 @@ module euler_angles_m
     type rot_mat
         real(rk), dimension(3,3) :: mat
     contains
-        procedure :: rot   => rotation_matrix
+        procedure :: e2b   => earth_to_body
+        procedure :: b2e   => body_to_earth
         procedure :: rot_z => z_rotation_matrix
         procedure :: rot_y => y_rotation_matrix
         procedure :: rot_x => x_rotation_matrix
@@ -17,14 +18,45 @@ module euler_angles_m
 contains
 
     !! =========================================
-    !!                SUBROUTINES
+    !!             SYSTEM ROTATIONS
     !! =========================================
 
-    subroutine rotation_matrix(self, v, phid, thetad, psid, mat_rot, m_out)
-        ! Converts from original to rotated state using euler angles
+    subroutine body_to_earth(self, body, phid, thetad, psid, earth)
+        ! Converts from rotated state to original state using euler angles 
+        ! (noninertial/body-fixed to inertial/earth-fixed)
         class(rot_mat), intent(in) :: self
-        class(vector), intent(in)  :: v
-        type(vector), intent(out)  :: mat_rot
+        type(vector), intent(in)   :: body
+        type(vector), intent(out)  :: earth
+        type(matrix)               :: m
+        real(rk), intent(in)       :: phid, thetad, psid
+        real(rk)                   :: phir, thetar, psir, &
+                                      c_phi, c_psi, c_theta, &
+                                      s_phi, s_psi, s_theta
+        ! Convert Deg to Rad
+        phir    = phid * d2r
+        thetar  = thetad * d2r
+        psir    = psid * d2r
+        ! Compute angles
+        c_phi   = cos(phir)
+        c_psi   = cos(psir)
+        c_theta = cos(thetar)
+        s_phi   = sin(phir)
+        s_psi   = sin(psir)
+        s_theta = sin(thetar)
+        ! Compute Transformation Matrix
+        m = matrix((c_theta*c_psi), ((s_phi*s_theta*c_psi) - (c_phi*s_psi)), ((c_phi*s_theta*c_psi) + (s_phi*s_psi)), &
+                   (c_theta*s_psi), ((s_phi*s_theta*s_psi) + (c_phi*c_psi)), ((c_phi*s_theta*s_psi) - (s_phi*c_psi)), &
+                   (-s_theta), (s_phi*c_theta), (c_phi*c_theta))
+        ! Compute New Matrix
+        earth = m * body
+    end subroutine body_to_earth
+
+    subroutine earth_to_body(self, earth, phid, thetad, psid, body, m_out)
+        ! Converts from original to rotated state using euler angles 
+        ! (inertial/earth-fixed to noninertial/body-fixed)
+        class(rot_mat), intent(in) :: self
+        class(vector), intent(in)  :: earth
+        type(vector), intent(out)  :: body
         type(matrix), intent(out)  :: m_out
         type(matrix)               :: m
         real(rk), intent(in)       :: phid, thetad, psid
@@ -47,14 +79,18 @@ contains
                    ((s_phi*s_theta*c_psi) - (c_phi*s_psi)), ((s_phi*s_theta*s_psi) + (c_phi*c_psi)), (s_phi*c_theta), &
                    ((c_phi*s_theta*c_psi) + (s_phi*s_psi)), ((c_phi*s_theta*s_psi) - (s_phi*c_psi)), (c_phi*c_theta))
         ! Compute New Matrix
-        mat_rot = m*v
+        body = m * earth
         ! Export Transformed Matrix
         m_out = m
-    end subroutine rotation_matrix
+    end subroutine earth_to_body
+
+    !! =========================================
+    !!          SYSTEM ROTATIONS RATES
+    !! =========================================
 
     subroutine rotation_rates(self, w, phid, thetad, rates)
         class(rot_mat), intent(in) :: self
-        class(vector), intent(in)  :: w
+        class(vector), intent(in)  :: w                  ! w vector is in p, q, r
         type(vector), intent(out)  :: rates
         type(matrix)               :: m
         real(rk), intent(in)       :: phid, thetad
@@ -139,5 +175,17 @@ contains
             write (*,*) "The bank angle is not in the range between -180 and 180."            
         end if
     end function x_rotation_matrix
+
+    ! subroutine euler_formula(self, v, Theta)
+    !     ! Individually rotates an axis by theta
+    !     class(rot_mat), intent(in) :: self
+    !     class(vector), intent(in)  :: v
+    !     real(rk), intent(in)       :: Theta
+    !     real(rk)                   :: unity
+    !     ! Check for unity
+    !     ! unity = v%x**2 + v%y**2 + v%z**2
+    !     ! if (unity == 1) then
+    !     ! end if
+    ! end subroutine euler_formula
     
 end module euler_angles_m

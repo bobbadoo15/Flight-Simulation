@@ -331,13 +331,13 @@ COMMON_FLAGS=(
 # A module MUST be compiled before any file that 'use's it.
 # Base kinds/constants first, then math modules, then the main program.
 # Dependency order here: units_m -> point_m -> vector_m -> matrix_m ->
-# euler_angles_m -> falcon. vector_m uses point_m, so point_m precedes it.
+# coordinates_m -> falcon. vector_m uses point_m, so point_m precedes it.
 FILES=(
   "${SRC_DIR}/math/units_m.f90"
   "${SRC_DIR}/math/point_m.f90"      # vector_m 'use's point_m, so it must come first
   "${SRC_DIR}/math/vector_m.f90"
   "${SRC_DIR}/math/matrix_m.f90"
-  "${SRC_DIR}/math/euler_angles_m.f90"
+  "${SRC_DIR}/math/coordinates_m.f90"
   "${SRC_DIR}/${PROJECT_NAME}.f90"
 )
 
