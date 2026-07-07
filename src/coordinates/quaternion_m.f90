@@ -34,7 +34,7 @@ module quaternion_m
     use units_m
     use vector_m
     use matrix_m
-    use coordinates_m
+    use euler_angles_m
     implicit none
 
     type :: quat
@@ -52,13 +52,13 @@ module quaternion_m
     end type quat
 
     interface quaternion
-        procedure quat_create_euler_rodrigues_quat
-        procedure quat_create_euler_axis
-        procedure quat_create_euler_axis_vector
-        procedure quat_create_euler_angles
-        procedure quat_create_rotation_matrix
-        procedure quat_create_vector
-        procedure quat_create_real_array
+        procedure create_euler_rodrigues_reals
+        procedure create_euler_axis_array
+        procedure create_euler_axis_vector
+        procedure create_euler_angles
+        procedure create_rotation_matrix
+        procedure create_vector
+        procedure create_real_array
     end interface quaternion
 
     interface operator (+)
@@ -81,20 +81,58 @@ contains
     !!              Quaternion Creation
     !! ============================================
 
-    function quat_create_euler_rodrigues_quat(e0, ex, ey, ez) result(q)
+    function create_euler_rodrigues_reals(e0, ex, ey, ez) result(q)
         real(rk), intent(in) :: e0, ex, ey, ez
         type(quat) :: q
         q%o = e0
         q%x = ex
         q%y = ey
         q%z = ez
-    end function quat_create_euler_rodrigues_quat
+    end function create_euler_rodrigues_reals
 
-    
+    function create_euler_axis_array(Thetad, Euler) result(q)
+        ! Used to create the axis if an array input is desired
+        real(rk), intent(in) :: Thetad, Euler(3)
+        real(rk)             :: Theta, s, c
+        type(quat)           :: q
+        Theta = Thetad * d2r
+        s = sin(Theta/2.0_rk)
+        c = cos(Theta/2.0_rk)
+        q%o = c
+        q%x = Euler(1) * s
+        q%y = Euler(2) * s
+        q%z = Euler(3) * s
+    end function create_euler_axis_array
+
+    function create_euler_axis_vector(Thetad, Euler) result(q)
+        ! Used to create the axis if a vector input is desired
+        real(rk), intent(in)     :: Thetad
+        type(vector), intent(in) :: Euler
+        real(rk)                 :: Theta, s, c
+        type(quat)               :: q
+        Theta = Thetad * d2r
+        s = sin(Theta/2.0_rk)
+        c = cos(Theta/2.0_rk)
+        q%o = c
+        q%x = Euler%x * s
+        q%y = Euler%y * s
+        q%z = Euler%z * s
+    end function create_euler_axis_vector
+
+    function create_euler_angles() result()
+    end function create_euler_angles
 
     !! ============================================
     !!             Quaternion Operations
     !! ============================================
+
+
+
+    !! ============================================
+    !!               Quaternion Misc.
+    !! ============================================
+
+
 
     !! ============================================
     !!          Quaternion Transformations
@@ -107,6 +145,27 @@ contains
     subroutine earth_to_body(self)
         class(quat), intent(in) :: self
     end subroutine earth_to_body
+
+    !! ============================================
+    !!               Quaternion Gets
+    !! ============================================
+
+    subroutine q_get_euler_axis(q, Theta, axis)
+        ! Calculates the axis (Ex, Ey, and Ez) by finding Theta in e0 = cos(Theta/2) => Theta = acos(e0) * 2
+        ! This relationship comes from the euler-rodrigues relationship
+        class(quat), intent(in)   :: q
+        type(vector), intent(out) :: axis
+        real(rk), intent(out)     :: Theta
+        real(rk)                  :: Thetar, s
+        Theta = 2.0_rk * acos(q%o)
+        if (Theta /= 0.0_rk .and. Theta /= pi) then
+            s = sin(Theta/2.0_rk)
+            axis = v_from_3_reals(q%x, q%y, q%z)
+            axis = axis / s
+        else
+            axis = v_from_3_reals(0.0_rk, 1.0_rk, 0.0_rk) 
+        end if
+    end subroutine q_get_euler_axis
 
     !! ============================================
     !!              Quaternion Display

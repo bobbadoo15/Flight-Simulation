@@ -5,7 +5,8 @@ program FlightAnalysisControlOperationsNetwork
     use vector_m
     use matrix_m
     use euler_angles_m
-    use quaternion_m
+    use euler_axis_m
+    ! use quaternion_m
     implicit none
 
     !! ========== Euler Axis Problems ==========
