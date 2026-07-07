@@ -2,7 +2,7 @@ module point_m
     use units_m, only: rk, eps
     implicit none
 
-    type point
+    type :: point
         real(rk) :: x, y, z
     contains
         procedure :: init       => p_init

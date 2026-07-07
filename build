@@ -202,6 +202,8 @@ COMMON_DIR="common"                   # shared modules (used by C scaffolding ex
 BIN_DIR="generate/bin"                # final executable lands here
 OBJ_DIR="generate/obj"                # .o object files
 MOD_DIR="generate/mod"                # .mod module-interface files
+MATH_DIR="math"
+COO_DIR="coordinates"
 IN_DIR="input"                        # runtime input files (reserved)
 OUT_DIR="output"                      # runtime output files (reserved)
 EXE="${BIN_DIR}/${PROJECT_NAME}"      # e.g. build/bin/falcon
@@ -333,11 +335,13 @@ COMMON_FLAGS=(
 # Dependency order here: units_m -> point_m -> vector_m -> matrix_m ->
 # coordinates_m -> falcon. vector_m uses point_m, so point_m precedes it.
 FILES=(
-  "${SRC_DIR}/math/units_m.f90"
-  "${SRC_DIR}/math/point_m.f90"      # vector_m 'use's point_m, so it must come first
-  "${SRC_DIR}/math/vector_m.f90"
-  "${SRC_DIR}/math/matrix_m.f90"
-  "${SRC_DIR}/math/coordinates_m.f90"
+  "${SRC_DIR}/${MATH_DIR}/units_m.f90"
+  "${SRC_DIR}/${MATH_DIR}/point_m.f90"      # vector_m 'use's point_m, so it must come first
+  "${SRC_DIR}/${MATH_DIR}/vector_m.f90"
+  "${SRC_DIR}/${MATH_DIR}/matrix_m.f90"
+  "${SRC_DIR}/${COO_DIR}/euler_angles_m.f90"
+  "${SRC_DIR}/${COO_DIR}/euler_axis_m.f90"
+  "${SRC_DIR}/${COO_DIR}/quaternion_m.f90"
   "${SRC_DIR}/${PROJECT_NAME}.f90"
 )
 

@@ -390,7 +390,7 @@ contains
 
         integer :: i, j, start_pos, len_line, token_count, cnt
         integer :: token_len, max_token_len
-        integer :: cnt_num, cnt_den, ie, e, ios
+        integer :: cnt_num, cnt_den, ie, e_int, ios
         character(len=:), allocatable :: u, inp, ue
         logical :: num_flag
 
@@ -477,11 +477,11 @@ contains
             end if
             ie = index(u, '^')
             if (ie == 0) then
-                e = 1
+                e_int = 1
             else
                 allocate(character(len=len(trim(u(ie+1:)))) :: ue)
                 ue = trim(u(ie+1:))
-                read(ue, *, iostat=ios) e
+                read(ue, *, iostat=ios) e_int
                 deallocate(ue)
                 if (ios /= 0) then
                     write(*,*) 'Error parsing units, ' // trim(line) // ', failed to convert exponent, ' // &
@@ -490,9 +490,9 @@ contains
                 end if
             end if
             if (num_flag) then
-                cnt_num = cnt_num + e
+                cnt_num = cnt_num + e_int
             else
-                cnt_den = cnt_den + e
+                cnt_den = cnt_den + e_int
             end if
         end do
 
@@ -508,15 +508,15 @@ contains
             end if
             ie = index(u, '^')
             if (ie == 0) then
-                e = 1
+                e_int = 1
             else
                 allocate(character(len=len(trim(u(ie+1:)))) :: ue)
                 ue = trim(u(ie+1:))
-                read(ue, *) e
+                read(ue, *) e_int
                 deallocate(ue)
             end if
             if (num_flag) then
-                do j = 1, e
+                do j = 1, e_int
                     cnt_num = cnt_num + 1
                     if (ie == 0) then
                         numer(cnt_num) = trim(u)
@@ -525,7 +525,7 @@ contains
                     end if
                 end do
             else
-                do j = 1, e
+                do j = 1, e_int
                     cnt_den = cnt_den + 1
                     if (ie == 0) then
                         denom(cnt_den) = trim(u(2:))
