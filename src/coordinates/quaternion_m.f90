@@ -45,20 +45,20 @@ module quaternion_m
         procedure :: mag              => q_magnitude
         procedure :: norm             => q_normalize
         procedure :: conj             => q_conjugate
-        procedure :: get_euler_angles => q_get_euler_angles
+        ! procedure :: get_euler_angles => q_get_euler_angles
         procedure :: get_euler_axis   => q_get_euler_axis
-        procedure :: get_rot_mat      => q_get_rotation_matrix
-        procedure :: q_rate           => q_time_derivative
+        ! procedure :: get_rot_mat      => q_get_rotation_matrix
+        ! procedure :: q_rate           => q_time_derivative
     end type quat
 
     interface quaternion
-        procedure create_euler_rodrigues_reals
-        procedure create_euler_axis_array
-        procedure create_euler_axis_vector
-        procedure create_euler_angles
-        procedure create_rotation_matrix
-        procedure create_vector
-        procedure create_real_array
+        procedure create_quaternion_euler_rodrigues_reals
+        procedure create_quaternion_euler_axis_array
+        procedure create_quaternion_euler_axis_vector
+        ! procedure create_quaternion_euler_angles
+        ! procedure create_quaternion_rotation_matrix
+        procedure create_quaternion_vector
+        procedure create_quaternion_real_array
     end interface quaternion
 
     interface operator (+)
@@ -81,16 +81,16 @@ contains
     !!              Quaternion Creation
     !! ============================================
 
-    function create_euler_rodrigues_reals(e0, ex, ey, ez) result(q)
+    function create_quaternion_euler_rodrigues_reals(e0, ex, ey, ez) result(q)
         real(rk), intent(in) :: e0, ex, ey, ez
         type(quat) :: q
         q%o = e0
         q%x = ex
         q%y = ey
         q%z = ez
-    end function create_euler_rodrigues_reals
+    end function create_quaternion_euler_rodrigues_reals
 
-    function create_euler_axis_array(Thetad, Euler) result(q)
+    function create_quaternion_euler_axis_array(Thetad, Euler) result(q)
         ! Used to create the axis if an array input is desired
         real(rk), intent(in) :: Thetad, Euler(3)
         real(rk)             :: Theta, s, c
@@ -102,9 +102,9 @@ contains
         q%x = Euler(1) * s
         q%y = Euler(2) * s
         q%z = Euler(3) * s
-    end function create_euler_axis_array
+    end function create_quaternion_euler_axis_array
 
-    function create_euler_axis_vector(Thetad, Euler) result(q)
+    function create_quaternion_euler_axis_vector(Thetad, Euler) result(q)
         ! Used to create the axis if a vector input is desired
         real(rk), intent(in)     :: Thetad
         type(vector), intent(in) :: Euler
@@ -117,34 +117,150 @@ contains
         q%x = Euler%x * s
         q%y = Euler%y * s
         q%z = Euler%z * s
-    end function create_euler_axis_vector
+    end function create_quaternion_euler_axis_vector
 
-    function create_euler_angles() result()
-    end function create_euler_angles
+    ! function create_quaternion_euler_angles(phid, thetad, psid) result(q)
+    !     real(rk), intent(in) :: phid, thetad, psid
+    !     real(rk)             :: phir, thetar, psir
+    !     type(quat)           :: q
+    ! end function create_quaternion_euler_angles
+
+    ! function create_quaternion_rotation_matrix() result(q)
+    ! end function create_quaternion_rotation_matrix
+
+    function create_quaternion_vector(v) result(q)
+        type(vector), intent(in) :: v
+        type(quat)               :: q
+        q%o = 0.0_rk
+        q%x = v%x
+        q%y = v%y
+        q%z = v%z
+    end function create_quaternion_vector
+
+    function create_quaternion_real_array(a) result(q)
+        real(rk), intent(in) :: a(4)
+        type(quat)           :: q
+        q%o = a(1)
+        q%x = a(2)
+        q%y = a(3)
+        q%z = a(4)
+    end function create_quaternion_real_array
 
     !! ============================================
     !!             Quaternion Operations
     !! ============================================
 
+    function q_add_q(q1, q2) result(q)
+        type(quat), intent(in) :: q1, q2
+        type(quat)             :: q
+        q%o = q1%o + q2%o
+        q%x = q1%x + q2%x
+        q%y = q1%y + q2%y
+        q%z = q1%z + q2%z
+    end function q_add_q
 
+    function q_sub_q(q1, q2) result(q)
+        type(quat), intent(in) :: q1, q2
+        type(quat)             :: q
+        q%o = q1%o - q2%o
+        q%x = q1%x - q2%x
+        q%y = q1%y - q2%y
+        q%z = q1%z - q2%z
+    end function q_sub_q
+
+    function scalar_times_q(s, q) result(q_out)
+        real(rk), intent(in)   :: s
+        type(quat), intent(in) :: q
+        type(quat)             :: q_out
+        q_out%o = s * q%o
+        q_out%x = s * q%x
+        q_out%y = s * q%y
+        q_out%z = s * q%z
+    end function scalar_times_q
+
+    function q_times_scalar(q, s) result(q_out)
+        type(quat), intent(in) :: q
+        real(rk), intent(in)   :: s
+        type(quat)             :: q_out
+        q_out%o = q%o * s
+        q_out%x = q%x * s
+        q_out%y = q%y * s
+        q_out%z = q%z * s
+    end function q_times_scalar
+
+    function q_times_q(q1, q2) result(q)
+        type(quat), intent(in) :: q1, q2
+        type(quat)             :: q
+        q%o = (q1%o * q2%o) - (q1%x * q2%x) - (q1%y * q2%y) - (q1%z * q2%z)
+        q%x = (q1%o * q2%x) + (q1%x * q2%o) + (q1%y * q2%z) - (q1%z * q2%y)
+        q%y = (q1%o * q2%y) - (q1%x * q2%z) + (q1%y * q2%o) + (q1%z * q2%x)
+        q%z = (q1%o * q2%z) + (q1%x * q2%y) - (q1%y * q2%x) + (q1%z * q2%o)
+    end function q_times_q
 
     !! ============================================
     !!               Quaternion Misc.
     !! ============================================
 
+    function q_conjugate(self) result(q)
+        class(quat), intent(in) :: self
+        type(quat)              :: q
+        q%o =  self%o
+        q%x = -self%x
+        q%y = -self%y
+        q%z = -self%z
+    end function q_conjugate
 
+    function q_magnitude(self) result(m)
+        class(quat), intent(in) :: self
+        real(rk)                :: m
+        m = sqrt(self%o**2 + self%x**2 + self%y**2 + self%z**2)
+    end function q_magnitude
+
+    subroutine q_normalize(self)
+        class(quat), intent(inout) :: self
+        real(rk)                   :: m
+        m = self%mag()
+        if (m <= 0.0_rk) then
+            write(*,*) "Division by zero, or negative magnitude, in q_normalize."
+            return
+        end if
+        self%o = self%o / m
+        self%x = self%x / m
+        self%y = self%y / m
+        self%z = self%z / m
+    end subroutine q_normalize
 
     !! ============================================
     !!          Quaternion Transformations
     !! ============================================
 
-    subroutine body_to_earth(self)
-        class(quat), intent(in) :: self
-    end subroutine body_to_earth
+    subroutine q_body_to_earth(self, q, body, earth)
+        class(quat), intent(in)  :: self
+        type(quat), intent(in)   :: q
+        type(vector), intent(in) :: body
+        type(vector)             :: earth
+        type(matrix)             :: m
+        ! Transformation Matrix
+        m = matrix((q%x**2 + q%o**2 - q%y**2 - q%z**2), (2.0_rk * ((q%x * q%y) - (q%z * q%o))), (2.0_rk * ((q%x * q%z) + (q%y * q%o))), &
+                   (2.0_rk * ((q%x * q%y) + (q%z * q%o))), (q%y**2 + q%o**2 - q%x**2 - q%z**2), (2.0_rk * ((q%y * q%z) - (q%x * q%o))), &
+                   (2.0_rk * ((q%x * q%z) - (q%y * q%o))), (2.0_rk * ((q%y * q%z) + (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
+        ! Compute Earth-fixed vector
+        earth = m * body
+    end subroutine q_body_to_earth
 
-    subroutine earth_to_body(self)
-        class(quat), intent(in) :: self
-    end subroutine earth_to_body
+    subroutine q_earth_to_body(self, q, earth, body)
+        class(quat), intent(in)   :: self
+        type(quat), intent(in)    :: q
+        type(vector), intent(in)  :: earth
+        type(vector), intent(out) :: body
+        type(matrix)              :: m
+        ! Transformation matrix
+        m = matrix((q%x**2 + q%o**2 - q%y**2 - q%z**2),    (2.0_rk * ((q%x * q%y) + (q%z * q%o))), (2.0_rk * ((q%x * q%z) - (q%y * q%o))), &
+                   (2.0_rk * ((q%x * q%y) - (q%z * q%o))), (q%y**2 + q%o**2 - q%x**2 - q%z**2),    (2.0_rk * ((q%y * q%z) + (q%x * q%o))), &
+                   (2.0_rk * ((q%x * q%z) + (q%y * q%o))), (2.0_rk * ((q%y * q%z) - (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
+        ! Compute Body-fixed vector
+        body = m * earth
+    end subroutine q_earth_to_body
 
     !! ============================================
     !!               Quaternion Gets
@@ -156,14 +272,14 @@ contains
         class(quat), intent(in)   :: q
         type(vector), intent(out) :: axis
         real(rk), intent(out)     :: Theta
-        real(rk)                  :: Thetar, s
+        real(rk)                  :: s
         Theta = 2.0_rk * acos(q%o)
         if (Theta /= 0.0_rk .and. Theta /= pi) then
             s = sin(Theta/2.0_rk)
             axis = v_from_3_reals(q%x, q%y, q%z)
             axis = axis / s
         else
-            axis = v_from_3_reals(0.0_rk, 1.0_rk, 0.0_rk) 
+            axis = v_from_3_reals(0.0_rk, 0.0_rk, 1.0_rk) 
         end if
     end subroutine q_get_euler_axis
 
