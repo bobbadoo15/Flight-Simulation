@@ -216,7 +216,5 @@ contains
     !! =========================================
     !!               MISCELLANEOUS
     !! =========================================
-
-    ! include direct-cosines??? (warren phillips book)
     
 end module euler_angles_m

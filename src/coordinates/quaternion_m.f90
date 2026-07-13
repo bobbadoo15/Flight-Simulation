@@ -45,7 +45,7 @@ module quaternion_m
         procedure :: mag              => q_magnitude
         procedure :: norm             => q_normalize
         procedure :: conj             => q_conjugate
-        ! procedure :: get_euler_angles => q_get_euler_angles
+        procedure :: get_euler_angles => q_get_euler_angles
         procedure :: get_euler_axis   => q_get_euler_axis
         ! procedure :: get_rot_mat      => q_get_rotation_matrix
         ! procedure :: q_rate           => q_time_derivative
@@ -55,7 +55,7 @@ module quaternion_m
         procedure create_quaternion_euler_rodrigues_reals
         procedure create_quaternion_euler_axis_array
         procedure create_quaternion_euler_axis_vector
-        ! procedure create_quaternion_euler_angles
+        procedure create_quaternion_euler_angles
         ! procedure create_quaternion_rotation_matrix
         procedure create_quaternion_vector
         procedure create_quaternion_real_array
@@ -119,11 +119,28 @@ contains
         q%z = Euler%z * s
     end function create_quaternion_euler_axis_vector
 
-    ! function create_quaternion_euler_angles(phid, thetad, psid) result(q)
-    !     real(rk), intent(in) :: phid, thetad, psid
-    !     real(rk)             :: phir, thetar, psir
-    !     type(quat)           :: q
-    ! end function create_quaternion_euler_angles
+    function create_quaternion_euler_angles(phid, thetad, psid) result(q)
+        real(rk), intent(in) :: phid, thetad, psid
+        real(rk)             :: phir, thetar, psir, &
+                                cphi, ctheta, cpsi, sphi, stheta, spsi
+        type(quat)           :: q
+        ! Convert from degrees to radians
+        phir   = phid * d2r
+        thetar = thetad * d2r
+        psir   = psid * d2r
+        ! Create half angles
+        cphi   = cos(phir/2.0_rk)
+        ctheta = cos(thetar/2.0_rk)
+        cpsi   = cos(psir/2.0_rk)
+        sphi   = sin(phir/2.0_rk)
+        stheta = sin(thetar/2.0_rk)
+        spsi   = cos(psir/2.0_rk)
+        ! Create Quaternion - This matrix could be negative; positive is typically used
+        q%o = (cphi*ctheta*cpsi) + (sphi*stheta*spsi)
+        q%x = (sphi*ctheta*cpsi) - (cphi*stheta*spsi)
+        q%y = (cphi*stheta*cpsi) + (sphi*ctheta*spsi)
+        q%z = (cphi*ctheta*spsi) - (sphi*stheta*cpsi)
+    end function create_quaternion_euler_angles
 
     ! function create_quaternion_rotation_matrix() result(q)
     ! end function create_quaternion_rotation_matrix
@@ -266,6 +283,34 @@ contains
     !!               Quaternion Gets
     !! ============================================
 
+    ! function q_get_euler_angles(self, q) result(euler)
+    !     class(quat), intent(in)   :: self, q
+    !     type(vector), intent(out) :: euler
+        
+    ! end function q_get_euler_angles
+
+    function q_get_euler_angles(self) result(euler)
+        class(quat), intent(in) :: self
+        type(vector)            :: euler
+        real(rk) :: phi, theta, psi, sin_theta
+
+        ! Roll (phi) - rotation about x-axis
+        phi = atan2(2.0_rk * (self%o*self%x + self%y*self%z), &
+                    (self%o**2 + self%z**2 - self%x**2 - self%y**2))
+
+        ! Pitch (theta) - rotation about y-axis, clamp to avoid domain errors near gimbal lock
+        sin_theta = 2.0_rk * (self%o*self%y - self%x*self%z)
+        sin_theta = max(-1.0_rk, min(1.0_rk, sin_theta))
+        theta = asin(sin_theta)
+
+        ! Yaw (psi) - rotation about z-axis
+        psi = atan2(2.0_rk * (self%o*self%z + self%x*self%y), &
+                    (self%o**2 + self%x**2 - self%y**2 - self%z**2))
+
+        ! Convert back to degrees to match your euler_angles constructor convention
+        euler = v_from_3_reals(phi * r2d, theta * r2d, psi * r2d)
+    end function q_get_euler_angles
+
     subroutine q_get_euler_axis(q, Theta, axis)
         ! Calculates the axis (Ex, Ey, and Ez) by finding Theta in e0 = cos(Theta/2) => Theta = acos(e0) * 2
         ! This relationship comes from the euler-rodrigues relationship
@@ -274,12 +319,13 @@ contains
         real(rk), intent(out)     :: Theta
         real(rk)                  :: s
         Theta = 2.0_rk * acos(q%o)
-        if (Theta /= 0.0_rk .and. Theta /= pi) then
-            s = sin(Theta/2.0_rk)
+        s = sin(Theta/2.0_rk)
+        if (abs(s) > eps) then
             axis = v_from_3_reals(q%x, q%y, q%z)
             axis = axis / s
         else
-            axis = v_from_3_reals(0.0_rk, 0.0_rk, 1.0_rk) 
+            ! Theta near 0 or pi: axis is undefined/arbitrary, pick a default
+            axis = v_from_3_reals(0.0_rk, 0.0_rk, 1.0_rk)
         end if
     end subroutine q_get_euler_axis
 

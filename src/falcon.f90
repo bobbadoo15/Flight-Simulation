@@ -6,11 +6,17 @@ program FlightAnalysisControlOperationsNetwork
     use matrix_m
     use euler_angles_m
     use euler_axis_m
-    ! use quaternion_m
+    use quaternion_m
     implicit none
 
-    !! ========== Euler Axis Problems ==========
-    ! Sometime referred to as Eigen Axis/Characteristic Axis
+    type(quat)   :: q
+    type(vector) :: euler
 
+    q = quaternion(-0.694115_rk, 0.694115_rk, -0.134922_rk, 0.134922_rk)
+    euler = q%get_euler_angles()
+
+    write(*,*) "Roll  (phi):  ", euler%x
+    write(*,*) "Pitch (theta):", euler%y
+    write(*,*) "Yaw   (psi):  ", euler%z
 
 end program FlightAnalysisControlOperationsNetwork

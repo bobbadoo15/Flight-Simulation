@@ -338,7 +338,7 @@ FILES=(
   "${SRC_DIR}/${MATH_DIR}/vector_m.f90"
   "${SRC_DIR}/${MATH_DIR}/matrix_m.f90"
   "${SRC_DIR}/${COO_DIR}/euler_angles_m.f90"
-  # "${SRC_DIR}/${COO_DIR}/quaternion_m.f90"
+  "${SRC_DIR}/${COO_DIR}/quaternion_m.f90"
   "${SRC_DIR}/${PROJECT_NAME}.f90"
 )
 
