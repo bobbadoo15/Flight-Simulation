@@ -47,7 +47,7 @@
 ||                                                                    ||
 ||                            Version 0.0.0                           ||
 ||                                                                    ||
-||                   Programmed By: Brinton montgomery                ||
+||                   Programmed By: Brinton Montgomery                ||
 ||            ASCII Art Designed By: https://www.asciiart.eu/         ||
 ||                                                                    ||
 \\====================================================================//
