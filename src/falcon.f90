@@ -1,6 +1,6 @@
 !! This is the main program for the flight simulation. It will initialize the simulation, run the main loop, and handle any necessary cleanup.
 
-program FlightAnalysisControlOperationsNetwork
+program FlightAnalysisforLandingControlandOperationsNetwork
     use units_m
     use vector_m
     use matrix_m
@@ -27,11 +27,12 @@ program FlightAnalysisControlOperationsNetwork
 
     ! write(*,*) ""
     ! write(*,*) "============================================="
-    ! write(*,*) "           BODY-FIXED COORDINATES            "
+    ! write(*,*) "            BODY-FIXED COORDINATES           "
     ! write(*,*) "============================================="
-    ! write(*,'(A,F18.13)') "Wbx (lbs): ", body%x
-    ! write(*,'(A,F18.13)') "Wby (lbs): ", body%y
-    ! write(*,'(A,F18.13)') "Wbz (lbs): ", body%z
+    ! write(*,'(A,F18.13)') " Wbx (lbs): ", body%x
+    ! write(*,'(A,F18.13)') " Wby (lbs): ", body%y
+    ! write(*,'(A,F18.13)') " Wbz (lbs): ", body%z
+    ! write(*,*) "============================================="
     ! write(*,*) ""
 
     !! ==================================================
@@ -53,11 +54,12 @@ program FlightAnalysisControlOperationsNetwork
 
     write(*,*) ""
     write(*,*) "============================================="
-    write(*,*) "           BODY-FIXED COORDINATES            "
+    write(*,*) "            BODY-FIXED COORDINATES           "
     write(*,*) "============================================="
-    write(*,'(A,F18.13)') "Wbx (lbs): ", body%x
-    write(*,'(A,F18.13)') "Wby (lbs): ", body%y
-    write(*,'(A,F18.13)') "Wbz (lbs): ", body%z
+    write(*,'(A,F18.13)') " Wbx (lbs): ", body%x
+    write(*,'(A,F18.13)') " Wby (lbs): ", body%y
+    write(*,'(A,F18.13)') " Wbz (lbs): ", body%z
+    write(*,*) "============================================="
     write(*,*) ""
 
     !! ==================================================
@@ -79,14 +81,15 @@ program FlightAnalysisControlOperationsNetwork
     ! write(*,*) "============================================="
     ! write(*,*) "             STATES OF AIRCRAFT              "
     ! write(*,*) "============================================="
-    ! write(*,'(A,F16.13)') "eo          : ", q%o
-    ! write(*,'(A,F16.13)') "ex          : ", q%x
-    ! write(*,'(A,F16.13)') "ey          : ", q%y
-    ! write(*,'(A,F16.13)') "ez          : ", q%z
-    ! write(*,'(A,F16.13)') "Theta (deg) : ", TH * r2d
-    ! write(*,'(A,F16.13)') "Ex          : ", EA%x
-    ! write(*,'(A,F16.13)') "Ey          : ", EA%y
-    ! write(*,'(A,F16.13)') "Ez          : ", EA%z
+    ! write(*,'(A,F16.13)') " eo          : ", q%o
+    ! write(*,'(A,F16.13)') " ex          : ", q%x
+    ! write(*,'(A,F16.13)') " ey          : ", q%y
+    ! write(*,'(A,F16.13)') " ez          : ", q%z
+    ! write(*,'(A,F16.13)') " Theta (deg) : ", TH * r2d
+    ! write(*,'(A,F16.13)') " Ex          : ", EA%x
+    ! write(*,'(A,F16.13)') " Ey          : ", EA%y
+    ! write(*,'(A,F16.13)') " Ez          : ", EA%z
+    ! write(*,*) "============================================="
     ! write(*,*) ""
 
-end program FlightAnalysisControlOperationsNetwork
+end program FlightAnalysisforLandingControlandOperationsNetwork

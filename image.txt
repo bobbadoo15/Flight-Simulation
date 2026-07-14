@@ -1,8 +1,8 @@
 
 //====================================================================\\
 ||                                                                    ||
-||                         Flight Analysis and                        ||
-||                     Control Operations Network                     ||
+||                     Flight Analysis for Landing,                   ||
+||                   Control, and Operations Network                  ||
 ||                                                                    ||
 ||              ----------------------------------------              ||
 ||                                                                    ||
