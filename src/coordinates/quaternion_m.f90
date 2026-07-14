@@ -40,8 +40,8 @@ module quaternion_m
     type :: quat
         real(rk) :: o, x, y, z
     contains
-        procedure :: qb2qe            => q_body_to_earth
-        procedure :: qe2qb            => q_earth_to_body
+        procedure :: qb2e             => q_body_to_earth
+        procedure :: qe2b             => q_earth_to_body
         procedure :: mag              => q_magnitude
         procedure :: norm             => q_normalize
         procedure :: conj             => q_conjugate
@@ -129,12 +129,12 @@ contains
         thetar = thetad * d2r
         psir   = psid * d2r
         ! Create half angles
-        cphi   = cos(phir/2.0_rk)
-        ctheta = cos(thetar/2.0_rk)
-        cpsi   = cos(psir/2.0_rk)
-        sphi   = sin(phir/2.0_rk)
-        stheta = sin(thetar/2.0_rk)
-        spsi   = cos(psir/2.0_rk)
+        cphi   = cos(phir   /2.0_rk)
+        ctheta = cos(thetar /2.0_rk)
+        cpsi   = cos(psir   /2.0_rk)
+        sphi   = sin(phir   /2.0_rk)
+        stheta = sin(thetar /2.0_rk)
+        spsi   = sin(psir   /2.0_rk)
         ! Create Quaternion - This matrix could be negative; positive is typically used
         q%o = (cphi*ctheta*cpsi) + (sphi*stheta*spsi)
         q%x = (sphi*ctheta*cpsi) - (cphi*stheta*spsi)

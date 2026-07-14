@@ -52,13 +52,14 @@ contains
         earth = m * body
     end subroutine e_body_to_earth
 
-    subroutine e_earth_to_body(self, earth, phid, thetad, psid, body, m_out)
+    ! subroutine e_earth_to_body(self, earth, phid, thetad, psid, body, m_out)
+    subroutine e_earth_to_body(self, earth, phid, thetad, psid, body)
         ! Converts from original to rotated state using euler angles 
         ! (inertial/earth-fixed to noninertial/body-fixed)
         class(rot_mat), intent(in) :: self
         class(vector), intent(in)  :: earth
         type(vector), intent(out)  :: body
-        type(matrix), intent(out)  :: m_out
+        ! type(matrix), intent(out)  :: m_out
         type(matrix)               :: m
         real(rk), intent(in)       :: phid, thetad, psid
         real(rk)                   :: phir, thetar, psir, &
@@ -82,7 +83,7 @@ contains
         ! Compute New Matrix
         body = m * earth
         ! Export Transformed Matrix
-        m_out = m
+        ! m_out = m
     end subroutine e_earth_to_body
 
     !! =========================================
