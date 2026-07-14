@@ -34,7 +34,7 @@ module units_m
                            r_e       = 6366707.01949371_rk, &         ! Mean Earth radius in m
                            r_air     = 287.0528_rk, &                 ! Gas constant for dry air in J/(kg*K)
                            gamma_air = 1.4_rk, &
-                           eps       = 1.0e-12_rk                     ! Small tolerance for floating-point comparisons
+                           eps       = 1.0e-8_rk                      ! Small tolerance for floating-point comparisons
 
     !! =====================================================
     !!                 CONVERSION FACTORS

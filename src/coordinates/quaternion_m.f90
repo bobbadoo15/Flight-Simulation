@@ -300,7 +300,7 @@ contains
             euler(2) = asin(2*(q%o*q%y - q%x*q%z))
             euler(3) = atan2((2*(q%o*q%z + q%x*q%y)), (q%o**2 + q%x**2 - q%y**2 - q%z**2))
             if (euler(3) < 0.0_rk) then
-                euler(3) = euler(3) + 2.0_rk*pi ! Puts psi within range for atan
+                euler(3) = euler(3) + 2.0_rk*pi ! Puts psi within range of 0 to 360 CW
             end if
         end if
     end function q_get_euler_angles
