@@ -5,9 +5,12 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     use vector_m
     use matrix_m
     use euler_angles_m
-    use euler_axis_m
     use quaternion_m
     implicit none
+
+    !! ===============================================================================================
+    !!                   CHAPTER 1 - COORDINATE SYSTEMS AND ATTITUDE DESCRIPTORS
+    !! ===============================================================================================
 
     !! ==================================================
     !!    EXAMPLE 1.2.1 - FIND BF FROM EF USING ANGLES
@@ -93,12 +96,36 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     ! write(*,*) ""
 
     !! ==================================================
+    !!    PROBLEM 1.C.7 - FIND QUAT FROM EULER ANGLES
+    !! ==================================================
+
+    type(quat) :: q
+    real(rk)   :: phi, theta, psi
+
+    phi   = 0.0_rk
+    theta = 90.0_rk
+    psi   = 0.0_rk
+
+    q = create_quaternion_euler_angles(phi, theta, psi)
+
+    write(*,*) ""
+    write(*,*) "============================================="
+    write(*,*) "        QUATERNION FROM EULER ANGLES         "
+    write(*,*) "============================================="
+    write(*,'(A,F20.13)') " eo : ", q%o
+    write(*,'(A,F20.13)') " ex : ", q%x
+    write(*,'(A,F20.13)') " ey : ", q%y
+    write(*,'(A,F20.13)') " ez : ", q%z
+    write(*,*) "============================================="
+    write(*,*) ""
+
+    !! ==================================================
     !!    PROBLEM 1.C.8 - FIND EULER ANGLES FROM QUAT
     !! ==================================================
 
-    type(quat)             :: q
-    real(rk)               :: e0, ex, ey, ez
-    real(rk), dimension(3) :: angles
+    ! type(quat)             :: q
+    ! real(rk)               :: e0, ex, ey, ez
+    ! real(rk), dimension(3) :: angles
 
     ! Case A
     ! e0 = 1.0_rk
@@ -126,22 +153,22 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     ! ez = 0.0_rk
 
     ! Personal Use
-    e0 = 0.694115_rk
-    ex = 0.694115_rk
-    ey = -0.134922_rk
-    ez = 0.134922_rk
+    ! e0 = -0.694115_rk
+    ! ex = 0.694115_rk
+    ! ey = -0.134922_rk
+    ! ez = 0.134922_rk
 
-    q = create_quaternion_euler_rodrigues_reals(e0, ex, ey, ez)
-    angles = q%get_euler_angles(q)
+    ! q = create_quaternion_euler_rodrigues_reals(e0, ex, ey, ez)
+    ! angles = q%get_euler_angles(q)
 
-    write(*,*) ""
-    write(*,*) "============================================="
-    write(*,*) "        EULER ANGLES FROM QUATERNION         "
-    write(*,*) "============================================="
-    write(*,'(A,F20.13)') " phi   (deg) : ", angles(1) * r2d
-    write(*,'(A,F20.13)') " theta (deg) : ", angles(2) * r2d
-    write(*,'(A,F20.13)') " psi   (deg) : ", angles(3) * r2d
-    write(*,*) "============================================="
-    write(*,*) ""
+    ! write(*,*) ""
+    ! write(*,*) "============================================="
+    ! write(*,*) "        EULER ANGLES FROM QUATERNION         "
+    ! write(*,*) "============================================="
+    ! write(*,'(A,F20.13)') " phi   (deg) : ", angles(1) * r2d
+    ! write(*,'(A,F20.13)') " theta (deg) : ", angles(2) * r2d
+    ! write(*,'(A,F20.13)') " psi   (deg) : ", angles(3) * r2d
+    ! write(*,*) "============================================="
+    ! write(*,*) ""
 
 end program FlightAnalysisforLandingControlandOperationsNetwork
