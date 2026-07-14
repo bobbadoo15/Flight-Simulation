@@ -283,32 +283,26 @@ contains
     !!               Quaternion Gets
     !! ============================================
 
-    ! function q_get_euler_angles(self, q) result(euler)
-    !     class(quat), intent(in)   :: self, q
-    !     type(vector), intent(out) :: euler
-        
-    ! end function q_get_euler_angles
-
-    function q_get_euler_angles(self) result(euler)
-        class(quat), intent(in) :: self
-        type(vector)            :: euler
-        real(rk) :: phi, theta, psi, sin_theta
-
-        ! Roll (phi) - rotation about x-axis
-        phi = atan2(2.0_rk * (self%o*self%x + self%y*self%z), &
-                    (self%o**2 + self%z**2 - self%x**2 - self%y**2))
-
-        ! Pitch (theta) - rotation about y-axis, clamp to avoid domain errors near gimbal lock
-        sin_theta = 2.0_rk * (self%o*self%y - self%x*self%z)
-        sin_theta = max(-1.0_rk, min(1.0_rk, sin_theta))
-        theta = asin(sin_theta)
-
-        ! Yaw (psi) - rotation about z-axis
-        psi = atan2(2.0_rk * (self%o*self%z + self%x*self%y), &
-                    (self%o**2 + self%x**2 - self%y**2 - self%z**2))
-
-        ! Convert back to degrees to match your euler_angles constructor convention
-        euler = v_from_3_reals(phi * r2d, theta * r2d, psi * r2d)
+    function q_get_euler_angles(self, q) result(euler)
+        class(quat), intent(in) :: self, q
+        real(rk), dimension(3)  :: euler
+        ! Check for gimbal lock
+        if (abs(q%o*q%y - q%x*q%z - 0.5_rk) < eps) then
+            euler(2) = pi / 2.0_rk
+            euler(3) = 0.0_rk !! Create if statement for using the previous heading
+            euler(1) = 2.0_rk*asin(q%x / cos(pi/4.0_rk)) + euler(3)
+        else if (abs(q%o*q%y - q%x*q%z + 0.5) < eps) then
+            euler(2) = -pi / 2.0_rk
+            euler(3) = 0.0_rk !! Create if statement for using the previous heading
+            euler(1) = 2.0_rk*asin(q%x / cos(pi/4.0_rk)) - euler(3)
+        else
+            euler(1) = atan2((2*(q%o*q%x + q%y*q%z)), (q%o**2 + q%z**2 - q%x**2 - q%y**2))
+            euler(2) = asin(2*(q%o*q%y - q%x*q%z))
+            euler(3) = atan2((2*(q%o*q%z + q%x*q%y)), (q%o**2 + q%x**2 - q%y**2 - q%z**2))
+            if (euler(3) < 0.0_rk) then
+                euler(3) = euler(3) + 2.0_rk*pi ! Puts psi within range for atan
+            end if
+        end if
     end function q_get_euler_angles
 
     subroutine q_get_euler_axis(q, Theta, axis)
