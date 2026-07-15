@@ -48,7 +48,7 @@ module quaternion_m
         procedure :: get_euler_angles => q_get_euler_angles
         procedure :: get_euler_axis   => q_get_euler_axis
         ! procedure :: get_rot_mat      => q_get_rotation_matrix
-        ! procedure :: q_rate           => q_time_derivative
+        procedure :: q_rate           => q_time_derivative
     end type quat
 
     interface quaternion
@@ -283,18 +283,25 @@ contains
     !!          Quaternion Transformations
     !! ============================================
 
-    subroutine q_body_to_earth(self, q, body, earth)
-        class(quat), intent(in)  :: self
-        type(quat), intent(in)   :: q
+    function q_body_to_earth(q, body) result(earth)
+        class(quat), intent(in)  :: q
         type(vector), intent(in) :: body
         type(vector)             :: earth
-        type(matrix)             :: m
+        type(quat)               :: T
+        ! type(matrix)             :: m
         ! Transformation Matrix
-        m = matrix((q%x**2 + q%o**2 - q%y**2 - q%z**2), (2.0_rk * ((q%x * q%y) - (q%z * q%o))), (2.0_rk * ((q%x * q%z) + (q%y * q%o))), &
-                   (2.0_rk * ((q%x * q%y) + (q%z * q%o))), (q%y**2 + q%o**2 - q%x**2 - q%z**2), (2.0_rk * ((q%y * q%z) - (q%x * q%o))), &
-                   (2.0_rk * ((q%x * q%z) - (q%y * q%o))), (2.0_rk * ((q%y * q%z) + (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
+        ! m = matrix((q%x**2 + q%o**2 - q%y**2 - q%z**2), (2.0_rk * ((q%x * q%y) - (q%z * q%o))), (2.0_rk * ((q%x * q%z) + (q%y * q%o))), &
+        !            (2.0_rk * ((q%x * q%y) + (q%z * q%o))), (q%y**2 + q%o**2 - q%x**2 - q%z**2), (2.0_rk * ((q%y * q%z) - (q%x * q%o))), &
+        !            (2.0_rk * ((q%x * q%z) - (q%y * q%o))), (2.0_rk * ((q%y * q%z) + (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
+        T = quaternion( body%x * q%x + body%y * q%y + body%z * q%z, &
+                        body%x * q%o - body%y * q%z + body%z * q%y, &
+                        body%x * q%z + body%y * q%o - body%z * q%x, &
+                       -body%x * q%y + body%y * q%x + body%z * q%o) ! Uses quaternion products (faster)
         ! Compute Earth-fixed vector
-        earth = m * body
+        ! earth = m * body
+        earth = vector(q%o * T%x + q%x * T%o + q%y * T%z - q%z * T%y, &
+                       q%o * T%y - q%x * T%z + q%y * T%o + q%z * T%x, &
+                       q%o * T%z + q%x * T%y - q%y * T%x + q%z * T%o) ! Uses quaternion products (faster)
 
         write(*,*) ""
         write(*,*) "============================================="
@@ -305,20 +312,26 @@ contains
         write(*,'(A,F20.13)') " Wfz (lbs): ", earth%z
         write(*,*) "============================================="
         write(*,*) ""
-    end subroutine q_body_to_earth
+    end function q_body_to_earth
 
-    subroutine q_earth_to_body(self, q, earth, body)
-        class(quat), intent(in)   :: self
-        type(quat), intent(in)    :: q
+    function q_earth_to_body(q, earth) result(body)
+        class(quat), intent(in)   :: q
         type(vector), intent(in)  :: earth
-        type(vector), intent(out) :: body
-        type(matrix)              :: m
+        type(vector)              :: body
+        type(quat)                :: T
+        ! type(matrix)              :: m
         ! Transformation matrix
-        m = matrix((q%x**2 + q%o**2 - q%y**2 - q%z**2),    (2.0_rk * ((q%x * q%y) + (q%z * q%o))), (2.0_rk * ((q%x * q%z) - (q%y * q%o))), &
-                   (2.0_rk * ((q%x * q%y) - (q%z * q%o))), (q%y**2 + q%o**2 - q%x**2 - q%z**2),    (2.0_rk * ((q%y * q%z) + (q%x * q%o))), &
-                   (2.0_rk * ((q%x * q%z) + (q%y * q%o))), (2.0_rk * ((q%y * q%z) - (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
+        ! m = matrix((q%x**2 + q%o**2 - q%y**2 - q%z**2),    (2.0_rk * ((q%x * q%y) + (q%z * q%o))), (2.0_rk * ((q%x * q%z) - (q%y * q%o))), &
+        !            (2.0_rk * ((q%x * q%y) - (q%z * q%o))), (q%y**2 + q%o**2 - q%x**2 - q%z**2),    (2.0_rk * ((q%y * q%z) + (q%x * q%o))), &
+        !            (2.0_rk * ((q%x * q%z) + (q%y * q%o))), (2.0_rk * ((q%y * q%z) - (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
+        T = quaternion(-earth%x * q%x - earth%y * q%y - earth%z * q%z, &
+                        earth%x * q%o + earth%y * q%z - earth%z * q%y, &
+                       -earth%x * q%z + earth%y * q%o + earth%z * q%x, &
+                        earth%x * q%y - earth%y * q%x + earth%z * q%o) ! Uses quaternion muliplation (faster)
         ! Compute Body-fixed vector
-        body = m * earth
+        body = vector( q%o * T%x - q%x * T%o - q%y * T%z + q%z * T%y, &
+                       q%o * T%y + q%x * T%z - q%y * T%o - q%z * T%x, &
+                       q%o * T%z - q%x * T%y + q%y * T%x - q%z * T%o)
         write(*,*) ""
         write(*,*) "============================================="
         write(*,*) "            BODY-FIXED COORDINATES           "
@@ -328,7 +341,25 @@ contains
         write(*,'(A,F20.13)') " Wbz (lbs): ", body%z
         write(*,*) "============================================="
         write(*,*) ""
-    end subroutine q_earth_to_body
+    end function q_earth_to_body
+
+    !! ============================================
+    !!          Quaternion Transformations
+    !! ============================================
+
+    function q_time_derivative(t, w) result(qdot)
+        class(quat), intent(in)  :: t
+        type(vector), intent(in) :: w
+        type(quat)               :: qdot
+        real(rk)                 :: p, q, r
+        p = w%x
+        q = w%y
+        r = w%z
+        qdot%o = 0.5_rk * (-t%x * p - t%y * q - t%z * r)
+        qdot%x = 0.5_rk * (t%o * p - t%z * q + t%y * r)
+        qdot%y = 0.5_rk * (t%z * p + t%o * q - t%x * r)
+        qdot%z = 0.5_rk * (-t%y * p + t%x * q + t%o * r)
+    end function q_time_derivative
 
     !! ============================================
     !!               Quaternion Gets
