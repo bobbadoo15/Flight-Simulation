@@ -50,6 +50,16 @@ contains
                    (-s_theta), (s_phi*c_theta), (c_phi*c_theta))
         ! Compute New Matrix
         earth = m * body
+
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "           EARTH-FIXED COORDINATES           "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " Wfx (lbs): ", earth%x
+        write(*,'(A,F20.13)') " Wfy (lbs): ", earth%y
+        write(*,'(A,F20.13)') " Wfz (lbs): ", earth%z
+        write(*,*) "============================================="
+        write(*,*) ""
     end subroutine e_body_to_earth
 
     ! subroutine e_earth_to_body(self, earth, phid, thetad, psid, body, m_out)
@@ -84,6 +94,16 @@ contains
         body = m * earth
         ! Export Transformed Matrix
         ! m_out = m
+        
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "            BODY-FIXED COORDINATES           "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " Wbx (lbs): ", body%x
+        write(*,'(A,F20.13)') " Wby (lbs): ", body%y
+        write(*,'(A,F20.13)') " Wbz (lbs): ", body%z
+        write(*,*) "============================================="
+        write(*,*) ""
     end subroutine e_earth_to_body
 
     !! =========================================

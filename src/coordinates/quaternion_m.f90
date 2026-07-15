@@ -140,6 +140,17 @@ contains
         q%x = (sphi*ctheta*cpsi) - (cphi*stheta*spsi)
         q%y = (cphi*stheta*cpsi) + (sphi*ctheta*spsi)
         q%z = (cphi*ctheta*spsi) - (sphi*stheta*cpsi)
+
+        ! write(*,*) ""
+        ! write(*,*) "============================================="
+        ! write(*,*) "        QUATERNION FROM EULER ANGLES         "
+        ! write(*,*) "============================================="
+        ! write(*,'(A,F20.13)') " eo : ", q%o
+        ! write(*,'(A,F20.13)') " ex : ", q%x
+        ! write(*,'(A,F20.13)') " ey : ", q%y
+        ! write(*,'(A,F20.13)') " ez : ", q%z
+        ! write(*,*) "============================================="
+        ! write(*,*) ""
     end function create_quaternion_euler_angles
 
     ! function create_quaternion_rotation_matrix() result(q)
@@ -212,6 +223,16 @@ contains
         q%x = (q1%o * q2%x) + (q1%x * q2%o) + (q1%y * q2%z) - (q1%z * q2%y)
         q%y = (q1%o * q2%y) - (q1%x * q2%z) + (q1%y * q2%o) + (q1%z * q2%x)
         q%z = (q1%o * q2%z) + (q1%x * q2%y) - (q1%y * q2%x) + (q1%z * q2%o)
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "      QUATERNION FROM QUATERNION PRODUCT     "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " eo : ", q%o
+        write(*,'(A,F20.13)') " ex : ", q%x
+        write(*,'(A,F20.13)') " ey : ", q%y
+        write(*,'(A,F20.13)') " ez : ", q%z
+        write(*,*) "============================================="
+        write(*,*) ""
     end function q_times_q
 
     !! ============================================
@@ -245,6 +266,17 @@ contains
         self%x = self%x / m
         self%y = self%y / m
         self%z = self%z / m
+
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "            NORMALIZED QUATERNION            "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " e0_hat : ", self%o
+        write(*,'(A,F20.13)') " ex_hat : ", self%x
+        write(*,'(A,F20.13)') " ey_hat : ", self%y
+        write(*,'(A,F20.13)') " ez_hat : ", self%z
+        write(*,*) "============================================="
+        write(*,*) ""
     end subroutine q_normalize
 
     !! ============================================
@@ -263,6 +295,16 @@ contains
                    (2.0_rk * ((q%x * q%z) - (q%y * q%o))), (2.0_rk * ((q%y * q%z) + (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
         ! Compute Earth-fixed vector
         earth = m * body
+
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "           EARTH-FIXED COORDINATES           "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " Wfx (lbs): ", earth%x
+        write(*,'(A,F20.13)') " Wfy (lbs): ", earth%y
+        write(*,'(A,F20.13)') " Wfz (lbs): ", earth%z
+        write(*,*) "============================================="
+        write(*,*) ""
     end subroutine q_body_to_earth
 
     subroutine q_earth_to_body(self, q, earth, body)
@@ -277,6 +319,15 @@ contains
                    (2.0_rk * ((q%x * q%z) + (q%y * q%o))), (2.0_rk * ((q%y * q%z) - (q%x * q%o))), (q%z**2 + q%o**2 - q%x**2 - q%y**2))
         ! Compute Body-fixed vector
         body = m * earth
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "            BODY-FIXED COORDINATES           "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " Wbx (lbs): ", body%x
+        write(*,'(A,F20.13)') " Wby (lbs): ", body%y
+        write(*,'(A,F20.13)') " Wbz (lbs): ", body%z
+        write(*,*) "============================================="
+        write(*,*) ""
     end subroutine q_earth_to_body
 
     !! ============================================
@@ -303,6 +354,15 @@ contains
                 euler(3) = euler(3) + 2.0_rk*pi ! Puts psi within range of 0 to 360 CW
             end if
         end if
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "        EULER ANGLES FROM QUATERNION         "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " phi   (deg) : ", euler(1) * r2d
+        write(*,'(A,F20.13)') " theta (deg) : ", euler(2) * r2d
+        write(*,'(A,F20.13)') " psi   (deg) : ", euler(3) * r2d
+        write(*,*) "============================================="
+        write(*,*) ""
     end function q_get_euler_angles
 
     subroutine q_get_euler_axis(q, Theta, axis)
@@ -321,6 +381,16 @@ contains
             ! Theta near 0 or pi: axis is undefined/arbitrary, pick a default
             axis = v_from_3_reals(0.0_rk, 0.0_rk, 1.0_rk)
         end if
+        write(*,*) ""
+        write(*,*) "============================================="
+        write(*,*) "             STATES OF AIRCRAFT              "
+        write(*,*) "============================================="
+        write(*,'(A,F20.13)') " Theta (deg) : ", Theta * r2d
+        write(*,'(A,F20.13)') " Ex          : ", axis%x
+        write(*,'(A,F20.13)') " Ey          : ", axis%y
+        write(*,'(A,F20.13)') " Ez          : ", axis%z
+        write(*,*) "============================================="
+        write(*,*) ""
     end subroutine q_get_euler_axis
 
     !! ============================================

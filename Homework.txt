@@ -1,0 +1,201 @@
+! ===============================================================================================
+!                   CHAPTER 1 - COORDINATE SYSTEMS AND ATTITUDE DESCRIPTORS
+! ===============================================================================================
+
+! ==================================================
+!    EXAMPLE 1.2.1 - FIND BF FROM EF USING ANGLES
+! ==================================================
+
+real(rk)      :: phi, theta, psi, weight
+type(vector)  :: w, body
+type(rot_mat) :: r
+
+phi    = 60.0_rk
+theta  = 10.0_rk
+psi    = 45.0_rk
+weight = 100.0_rk
+
+w      = v_from_3_reals(0.0_rk, 0.0_rk, weight)
+call r%e2b(w, phi, theta, psi, body)
+
+! ==================================================
+!  EXAMPLE 1.5.1 - FIND BF FROM EF USING QUATERNION
+! ==================================================
+
+type(vector)  :: w, body
+type(quat)    :: self, q
+real(rk)      :: weight, phi, theta, psi
+
+phi    = 60.0_rk
+theta  = 10.0_rk
+psi    = 45.0_rk
+weight = 100.0_rk
+
+q = create_quaternion_euler_angles(phi, theta, psi)
+w = v_from_3_reals(0.0_rk, 0.0_rk, weight)
+call self%qe2b(q, w, body)
+
+! ==================================================
+!  EXAMPLE 1.6.1 - FIND QUAT/EULER AXIS FROM ANGLES
+! ==================================================
+
+real(rk) :: phi, theta, psi, TH
+type(quat) :: q
+type(vector) :: EA
+
+phi   = 60.0_rk
+theta = 20.0_rk
+psi   = 45.0_rk
+
+q = create_quaternion_euler_angles(phi, theta, psi)
+call q%get_euler_axis(TH, EA)
+
+! ==================================================
+!    PROBLEM 1.C.1 - FIND BF FROM EF USING ANGLES
+! ==================================================
+
+real(rk)      :: phi, theta, psi, weight
+type(vector)  :: w, body
+type(rot_mat) :: r
+
+phi    = 60.0_rk
+theta  = 10.0_rk
+psi    = 45.0_rk
+weight = 100.0_rk
+
+w      = v_from_3_reals(0.0_rk, 0.0_rk, weight)
+call r%e2b(w, phi, theta, psi, body)
+
+! ==================================================
+!    PROBLEM 1.C.2 - FIND EF FROM BF USING ANGLES
+! ==================================================
+
+real(rk)               :: phi, theta, psi
+real(rk), dimension(3) :: weight
+type(vector)           :: w, body
+type(rot_mat)          :: r
+
+phi    = 60.0_rk
+theta  = 10.0_rk
+psi    = 45.0_rk
+weight = [-17.3648177666930_rk, 85.2868531952443_rk, 49.2403876506104_rk]
+
+w      = v_from_array(weight)
+call r%b2e(w, phi, theta, psi, body)
+
+! ==================================================
+!     PROBLEM 1.C.3 - FIND QUAT USING QUAT PROD
+! ==================================================
+
+type(quat) :: q, q1, q2
+
+q1 = quaternion([1.0_rk, 2.0_rk, 3.0_rk, 4.0_rk])
+q2 = quaternion([2.0_rk, 0.0_rk, 1.0_rk, -1.0_rk])
+
+q = q_times_q(q1, q2)
+
+! ==================================================
+!    PROBLEM 1.C.4 - FIND BF FROM EF USING QUAT
+! ==================================================
+
+type(vector)           :: w, body
+type(quat)             :: self, q
+real(rk)               :: phi, theta, psi
+real(rk), dimension(3) :: weight
+
+phi    = 60.0_rk
+theta  = 10.0_rk
+psi    = 45.0_rk
+weight = [0.0_rk, 0.0_rk, 100.0_rk]
+
+q = create_quaternion_euler_angles(phi, theta, psi)
+w = v_from_array(weight)
+call self%qe2b(q, w, body)
+
+! ==================================================
+!     PROBLEM 1.C.5 - FIND EF FROM BF USING QUAT
+! ==================================================
+
+type(vector)           :: w, earth
+type(quat)             :: self, q
+real(rk)               :: phi, theta, psi
+real(rk), dimension(3) :: weight
+
+phi    = 60.0_rk
+theta  = 10.0_rk
+psi    = 45.0_rk
+weight = [-17.3648177666930_rk, 85.2868531952443_rk, 49.2403876506104_rk]
+
+q = create_quaternion_euler_angles(phi, theta, psi)
+w = v_from_array(weight)
+call self%qb2e(q, w, earth)
+
+! ==================================================
+!     PROBLEM 1.C.6 - FIND NORM QUAT FROM QUAT
+! ==================================================
+
+type(quat)             :: q
+real(rk), dimension(4) :: q_old
+
+q_old = [2.0_rk, 1.0_rk, 2.0_rk, 3.0_rk]
+q = quaternion(q_old)
+call q%norm()
+
+! ==================================================
+!    PROBLEM 1.C.7 - FIND QUAT FROM EULER ANGLES
+! ==================================================
+
+type(quat) :: q
+real(rk)   :: phi, theta, psi
+
+phi   = 0.0_rk
+theta = 90.0_rk
+psi   = 0.0_rk
+
+q = create_quaternion_euler_angles(phi, theta, psi)
+
+! ==================================================
+!    PROBLEM 1.C.8 - FIND EULER ANGLES FROM QUAT
+! ==================================================
+
+type(quat)             :: q
+real(rk)               :: e0, ex, ey, ez
+real(rk), dimension(3) :: angles
+
+! Case A
+e0 = 1.0_rk
+ex = 0.0_rk
+ey = 0.0_rk
+ez = 0.0_rk
+
+! Case B
+e0 = 0.84462319862_rk
+ex = 0.19134171618_rk
+ey = 0.46193976626_rk
+ez = 0.19134171618_rk
+
+! Case C
+e0 = -0.35888381816_rk
+ex = -0.60926382222_rk
+ey = 0.61543441464_rk
+ez = -0.34819603857_rk
+
+! Case D
+e0 = 0.70710678119_rk
+ex = 0.0_rk
+ey = 0.70710678119_rk
+ey = -0.70710678119_rk
+ez = 0.0_rk
+
+! Personal Use
+e0 = -0.694115_rk
+ex = 0.694115_rk
+ey = -0.134922_rk
+ez = 0.134922_rk
+
+q = create_quaternion_euler_rodrigues_reals(e0, ex, ey, ez)
+angles = q%get_euler_angles(q)
+
+! ===============================================================================================
+!                             CHAPTER 2 - MASS AND INERTIA MODELING
+! ===============================================================================================
