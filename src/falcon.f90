@@ -6,6 +6,7 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     use matrix_m
     use euler_angles_m
     use quaternion_m
+    use inertia_m
     implicit none
 
     ! ===============================================================================================
