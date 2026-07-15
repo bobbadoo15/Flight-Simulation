@@ -47,7 +47,7 @@ module quaternion_m
         procedure :: conj             => q_conjugate
         procedure :: get_euler_angles => q_get_euler_angles
         procedure :: get_euler_axis   => q_get_euler_axis
-        ! procedure :: get_rot_mat      => q_get_rotation_matrix
+        procedure :: get_rot_mat      => q_get_rotation_matrix
         procedure :: q_rate           => q_time_derivative
     end type quat
 
@@ -423,6 +423,20 @@ contains
         write(*,*) "============================================="
         write(*,*) ""
     end subroutine q_get_euler_axis
+
+    function q_get_rotation_matrix(q) result(r)
+        class(quat), intent(in) :: q
+        type(matrix)            :: r
+        r%mat(1,1) = q%x**2 + q%o**2 - q%y**2 - q%z**2
+        r%mat(2,2) = q%y**2 + q%o**2 - q%x**2 - q%z**2
+        r%mat(3,3) = q%z**2 + q%o**2 - q%x**2 - q%y**2
+        r%mat(1,2) = 2.0_rk * (q%x * q%y + q%z * q%o)
+        r%mat(1,3) = 2.0_rk * (q%x * q%z - q%y * q%o)
+        r%mat(2,1) = 2.0_rk * (q%x * q%y - q%z * q%o)
+        r%mat(2,3) = 2.0_rk * (q%y * q%z + q%x * q%o)
+        r%mat(3,1) = 2.0_rk * (q%x * q%z + q%y * q%o)
+        r%mat(3,2) = 2.0_rk * (q%y * q%z - q%x * q%o)
+    end function q_get_rotation_matrix
 
     !! ============================================
     !!              Quaternion Display
