@@ -50,7 +50,7 @@ contains
         real(rk)             :: g
         ! Need to make sure to convert the H value to m and then 
         ! convert back to US after calculations
-        g = get_gravity_si(H_ft * ft_to_m) * m_to_ft
+        g = gravity_si(H_ft * ft_to_m) * m_to_ft
         ! write(*,*) ""
         ! write(*,*) "================================================="
         ! write(*,*) "        GRAVITY FROM GEOMETRIC ALTITUTDE"

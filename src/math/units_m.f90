@@ -4,7 +4,7 @@ module units_m
     private
 
     public :: rk
-    public :: pi, e, gssl_si, gssl_us, r_e_z, r_e, r_air, gamma_air, eps
+    public :: pi, e, gssl_si, gssl_us, r_e_z, r_e, r_air, gamma_air, eps, Ts, P0, mus, ks
     public :: d2r, r2d, rev
     public :: ft_to_m, m_to_ft, inch_to_ft, ft_to_inch, yard_to_ft, ft_to_yard
     public :: mile_to_ft, ft_to_mile, nmi_to_ft, ft_to_nmi
@@ -17,7 +17,7 @@ module units_m
     public :: yocto, zepto, atto, femto, pico, nano, micro, milli, centi, deci
     public :: deka, hecto, kilo, mega, giga, tera, peta, exa, zetta, yotta
     public :: conversion_factor_to, conversion_factor_from, parse_variable_and_units
-    public :: f_to_k, k_to_f, c_to_k, k_to_c, f_to_c, c_to_f, f_to_r, r_to_f
+    public :: f_to_k, k_to_f, c_to_k, k_to_c, f_to_c, c_to_f, f_to_r, r_to_f, r_to_k, k_to_r
 
     !! =====================================================
     !!                     CONSTANTS
@@ -300,6 +300,8 @@ contains
         character(len=*), intent(in) :: s
         real(rk) :: f
         integer :: i, j
+
+        f = 1.0_rk   ! default initialization to silence the warning
 
         call check_type(s, [character(len=4) :: ft_str, m_str, inch_str, yard_str, mile_str, nmi_str], i, j)
         if (i /= 0) then

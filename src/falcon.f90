@@ -22,8 +22,8 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     H_si = 100000.0_rk
     H_us = 2.0_rk * H_si
 
-    gsi = get_gravity_si(H_si)
-    gus = get_gravity_us(H_us)
+    gsi = gravity_si(H_si)
+    gus = gravity_us(H_us)
     write(*,*) ""
     write(*,*) "================================================="
     write(*,*) "        GRAVITY FROM GEOMETRIC ALTITUTDE"
