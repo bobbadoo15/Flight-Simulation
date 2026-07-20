@@ -205,6 +205,7 @@ MOD_DIR="generate/mod"                # .mod module-interface files
 MATH_DIR="math"
 COO_DIR="coordinates"
 AIR_DIR="aircraft"
+AERO_DIR="aerodynamics"
 IN_DIR="input"                        # runtime input files (reserved)
 OUT_DIR="output"                      # runtime output files (reserved)
 EXE="${BIN_DIR}/${PROJECT_NAME}"      # e.g. build/bin/falcon
@@ -340,7 +341,7 @@ FILES=(
   "${SRC_DIR}/${MATH_DIR}/matrix_m.f90"
   "${SRC_DIR}/${COO_DIR}/euler_angles_m.f90"
   "${SRC_DIR}/${COO_DIR}/quaternion_m.f90"
-  "${SRC_DIR}/${AIR_DIR}/inertia_m.f90"
+  "${SRC_DIR}/${AERO_DIR}/atmosphere_m.f90"
   "${SRC_DIR}/${PROJECT_NAME}.f90"
 )
 

@@ -4,7 +4,7 @@ module units_m
     private
 
     public :: rk
-    public :: pi, e, g_si, g_us, r_e_z, r_e, r_air, gamma_air, eps
+    public :: pi, e, gssl_si, gssl_us, r_e_z, r_e, r_air, gamma_air, eps
     public :: d2r, r2d, rev
     public :: ft_to_m, m_to_ft, inch_to_ft, ft_to_inch, yard_to_ft, ft_to_yard
     public :: mile_to_ft, ft_to_mile, nmi_to_ft, ft_to_nmi
@@ -28,13 +28,17 @@ module units_m
     !! Using one shared kind helps every module use the same precision.
     real(rk), parameter :: pi        = acos(-1.0_rk), &
                            e         = exp(1.0_rk), &
-                           g_si      = 9.80665_rk, &                  ! Standard gravity in m/s^2
-                           g_us      = 32.1740485564304_rk, &         ! Standard gravity in ft/s^2
+                           gssl_si   = 9.80665_rk, &                  ! Standard gravity in m/s^2
+                           gssl_us   = 32.1740485564304_rk, &         ! Standard gravity in ft/s^2
                            r_e_z     = 6356766.0_rk, &                ! Geopotential Earth radius in m
                            r_e       = 6366707.01949371_rk, &         ! Mean Earth radius in m
                            r_air     = 287.0528_rk, &                 ! Gas constant for dry air in J/(kg*K)
                            gamma_air = 1.4_rk, &
-                           eps       = 1.0e-8_rk                      ! Small tolerance for floating-point comparisons
+                           eps       = 1.0e-8_rk, &                   ! Small tolerance for floating-point comparisons
+                           Ts        = 273.15_rk, & 
+                           P0        = 101325, &                      ! N/m^2 or Pa
+                           mus       = 0.000017153, &                 ! kg/ms
+                           ks        = 110.4
 
     !! =====================================================
     !!                 CONVERSION FACTORS
@@ -84,8 +88,8 @@ module units_m
     !! Desired acceleration from ft/s^2
     real(rk), parameter :: fps2_to_mps2 = 0.3048_rk, &
                            mps2_to_fps2 = 1.0_rk / fps2_to_mps2, &
-                           fps2_to_gs   = 1.0_rk / g_us, &
-                           gs_to_fps2   = g_us
+                           fps2_to_gs   = 1.0_rk / gssl_us, &
+                           gs_to_fps2   = gssl_us
 
     !! Desired mass from US to SI
     real(rk), parameter :: lbm_to_kg   = 0.45359237_rk, &
@@ -200,25 +204,25 @@ contains
         !! pure means the function has no side effects.
         !! intent(in) means tf is input-only.
         real(rk), intent(in) :: tf
-        f_to_k = (tf - 32.0_rk) * (5.0_rk / 9.0_rk) + 273.15_rk
+        f_to_k = (tf - 32.0_rk) * (5.0_rk / 9.0_rk) + Ts
     end function f_to_k
 
     pure real(rk) function k_to_f(tk)
         !! Converts Kelvin to Fahrenheit.
         real(rk), intent(in) :: tk
-        k_to_f = (tk - 273.15_rk) * (9.0_rk / 5.0_rk) + 32.0_rk
+        k_to_f = (tk - Ts) * (9.0_rk / 5.0_rk) + 32.0_rk
     end function k_to_f
 
     pure real(rk) function c_to_k(tc)
         !! Converts Celsius to Kelvin.
         real(rk), intent(in) :: tc
-        c_to_k = tc + 273.15_rk
+        c_to_k = tc + Ts
     end function c_to_k
 
     pure real(rk) function k_to_c(tk)
         !! Converts Kelvin to Celsius.
         real(rk), intent(in) :: tk
-        k_to_c = tk - 273.15_rk
+        k_to_c = tk - Ts
     end function k_to_c
 
     pure real(rk) function f_to_c(tf)
@@ -244,6 +248,18 @@ contains
         real(rk), intent(in) :: tr
         r_to_f = tr - 459.67_rk
     end function r_to_f
+
+    pure real(rk) function k_to_r(tk)
+        !! Converts Kelvin to Rankine.
+        real(rk), intent(in) :: tk
+        k_to_r = (9.0_rk / 5.0_rk) * tk
+    end function k_to_r
+
+    pure real(rk) function r_to_k(tr)
+        !! Converts Kelvin to Rankine.
+        real(rk), intent(in) :: tr
+        r_to_k = (5.0_rk / 9.0_rk) * tr
+    end function r_to_k
 
     !! =====================================================
     !!                  PARSER SUBROUTINES
