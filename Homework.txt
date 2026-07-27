@@ -205,6 +205,34 @@ angles = q%get_euler_angles(q)
 ! ===============================================================================================
 
 ! ==================================================
+!     EXAMPLE 3.2.1 - FIND AIR PROPERTIES IN SI
+! ==================================================
+
+type(atmosphere) :: atmo
+real(rk)         :: H_m, rho, mu, nu, g, lambda, a, Z, T, P
+
+H_m = 25000_rk
+
+Z = atmo%gm2gp(H_m)
+call atmo%air_properties_si(H_m, rho, mu, nu, g, lambda, a)
+call atmo%temp_and_pressure_gm_si(H_m, T, P)
+
+write(*,*) ""
+write(*,*) "================================================="
+write(*,*) "          AIR PROPERTIES IN SI UNITS"
+write(*,*) "================================================="
+write(*,'(A,F15.9)') " g (m/s^2)    :      ", g
+write(*,'(A,F15.5)') " Z (m)        :      ", Z
+write(*,'(A,F15.7)') " T (K)        :      ", T
+write(*,'(A,F15.6)') " P (Pa)       :      ", P
+write(*,'(A,F15.9)') " rho (kg/m3)  :      ", rho
+write(*,'(A,F15.7)') " a (m/s)      :      ", a
+write(*,'(A,E16.10)') " mu (kg/ms)  :      ", mu
+write(*,'(A,E16.10)') " lambda (m)  :      ", lambda
+write(*,*) "================================================="
+write(*,*) ""
+
+! ==================================================
 !            PROBLEM 3.C1/C2 - FIND g(H)
 ! ==================================================
 

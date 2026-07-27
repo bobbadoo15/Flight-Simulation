@@ -12,7 +12,7 @@ module units_m
     public :: fps2_to_mps2, mps2_to_fps2, fps2_to_gs, gs_to_fps2
     public :: lbm_to_kg, kg_to_lbm, slug_to_kg, kg_to_slug, lbm_to_slug, slug_to_lbm
     public :: lbf_to_n, n_to_lbf, psi_to_pa, pa_to_psi, psf_to_pa
-    public :: slugft3_to_kgm3, slugfts_to_kgms
+    public :: slugft3_to_kgm3, slugfts_to_kgms, kgm3_to_slugft3, kgms_to_slugfts
     public :: minute, hour, day, week, month, year
     public :: yocto, zepto, atto, femto, pico, nano, micro, milli, centi, deci
     public :: deka, hecto, kilo, mega, giga, tera, peta, exa, zetta, yotta
@@ -26,7 +26,8 @@ module units_m
     !!   - real(rk): use the shared real64 precision from iso_fortran_env
     !!   - parameter: this value is a constant and cannot change
     !! Using one shared kind helps every module use the same precision.
-    real(rk), parameter :: pi        = acos(-1.0_rk), &
+    real(rk), parameter :: pi        = 3.141592653589793_rk, &
+                        !    pi        = acos(-1.0_rk), &
                            e         = exp(1.0_rk), &
                            gssl_si   = 9.80665_rk, &                  ! Standard gravity in m/s^2
                            gssl_us   = 32.1740485564304_rk, &         ! Standard gravity in ft/s^2
@@ -36,17 +37,15 @@ module units_m
                            gamma_air = 1.4_rk, &
                            eps       = 1.0e-8_rk, &                   ! Small tolerance for floating-point comparisons
                            Ts        = 273.15_rk, & 
-                           P0        = 101325, &                      ! N/m^2 or Pa
-                           mus       = 0.000017153, &                 ! kg/ms
-                           ks        = 110.4
+                           P0        = 101325_rk, &                      ! N/m^2 or Pa
+                           mus       = 0.00001716_rk, &                 ! kg/ms
+                           ks        = 110.4_rk
 
     !! =====================================================
     !!                 CONVERSION FACTORS
     !! =====================================================
 
     !! Angles
-    !! d2r means degrees-to-radians.
-    !! r2d means radians-to-degrees.
     real(rk), parameter :: d2r = pi / 180.0_rk, &
                            r2d = 180.0_rk / pi, &
                            rev = 0.5_rk / pi
@@ -55,6 +54,10 @@ module units_m
     real(rk), parameter :: psf_to_pa       = 47.880258_rk, &
                            slugft3_to_kgm3 = 515.378818_rk, &
                            slugfts_to_kgms = 47.880258_rk
+
+    !! SI to US
+    real(rk), parameter :: kgm3_to_slugft3 = 1.0_rk / slugft3_to_kgm3, &
+                           kgms_to_slugfts = 1.0_rk / slugfts_to_kgms
 
     !! Desired time from seconds
     !! Example: 120.0_rk * minute converts 120 seconds into minutes.

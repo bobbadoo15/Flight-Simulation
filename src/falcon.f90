@@ -14,22 +14,30 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     ! ===============================================================================================
 
     ! ==================================================
-    !            PROBLEM 3.C1/C2 - FIND g(H)
+    !     EXAMPLE 3.2.1 - FIND AIR PROPERTIES IN SI
     ! ==================================================
 
-    real(rk) :: H_si, H_us, gsi, gus
+    type(atmosphere) :: atmo
+    real(rk)         :: H_ft, rho, mu, nu, g, lambda, a, Z, T, P
 
-    H_si = 100000.0_rk
-    H_us = 2.0_rk * H_si
+    H_ft = 150000_rk
 
-    gsi = gravity_si(H_si)
-    gus = gravity_us(H_us)
+    Z = atmo%gm2gp(H_ft)
+    call atmo%air_properties_us(H_ft, rho, mu, nu, g, lambda, a)
+    call atmo%temp_and_pressure_gm_us(H_ft, T, P)
+
     write(*,*) ""
     write(*,*) "================================================="
-    write(*,*) "        GRAVITY FROM GEOMETRIC ALTITUTDE"
+    write(*,*) "          AIR PROPERTIES IN US UNITS"
     write(*,*) "================================================="
-    write(*,'(A,F15.12)') " Gravity (m/s^2)  :   ", gsi
-    write(*,'(A,F15.12)') " Gravity (ft/s^2) :   ", gus
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " g (ft/s2)      :      ", g
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " Z (ft)         :      ", Z
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " T (R)          :      ", T
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " P (PSF)        :      ", P
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " rho (slug/ft3) :      ", rho
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " a (ft/s)       :      ", a
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " mu (slug/fts)  :      ", mu
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " lambda (ft)    :      ", lambda
     write(*,*) "================================================="
     write(*,*) ""
 
