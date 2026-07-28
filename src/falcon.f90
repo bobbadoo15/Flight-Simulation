@@ -14,7 +14,7 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     ! ===============================================================================================
 
     ! ==================================================
-    !     EXAMPLE 3.2.1 - FIND AIR PROPERTIES IN SI
+    !     EXAMPLE 3.2.2 - FIND AIR PROPERTIES IN US
     ! ==================================================
 
     type(atmosphere) :: atmo
