@@ -18,11 +18,11 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     ! ==================================================
 
     type(atmosphere) :: atmo
-    real(rk)         :: H_ft, rho, mu, nu, g, lambda, a, Z, T, P
+    real(rk)         :: H_ft, rho, mu, nu, g, lambda, a, Z_m, Z_ft, T, P
 
     H_ft = 150000_rk
 
-    Z = atmo%gm2gp(H_ft)
+    Z_ft = atmo%gm2gp_us(H_ft)
     call atmo%air_properties_us(H_ft, rho, mu, nu, g, lambda, a)
     call atmo%temp_and_pressure_gm_us(H_ft, T, P)
 
@@ -31,7 +31,7 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     write(*,*) "          AIR PROPERTIES IN US UNITS"
     write(*,*) "================================================="
     write(*, '(A15, " : ", 1P, E24.16, 0P)') " g (ft/s2)      :      ", g
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " Z (ft)         :      ", Z
+    write(*, '(A15, " : ", 1P, E24.16, 0P)') " Z (ft)         :      ", Z_ft
     write(*, '(A15, " : ", 1P, E24.16, 0P)') " T (R)          :      ", T
     write(*, '(A15, " : ", 1P, E24.16, 0P)') " P (PSF)        :      ", P
     write(*, '(A15, " : ", 1P, E24.16, 0P)') " rho (slug/ft3) :      ", rho

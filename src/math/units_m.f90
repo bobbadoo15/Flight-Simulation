@@ -52,7 +52,7 @@ module units_m
 
     !! US to SI
     real(rk), parameter :: psf_to_pa       = 47.880258_rk, &
-                           slugft3_to_kgm3 = 515.378818_rk, &
+                           slugft3_to_kgm3 = 515.379_rk, &
                            slugfts_to_kgms = 47.880258_rk
 
     !! SI to US

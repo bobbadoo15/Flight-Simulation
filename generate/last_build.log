@@ -1,0 +1,25 @@
+src/aerodynamics/atmosphere_m.f90:229:12:
+
+  229 |         if (Z_m == zrange(7)) then
+      |            1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/aerodynamics/atmosphere_m.f90:241:20:
+
+  241 |                 if (T_prime(i) == 0.0_rk) then
+      |                    1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/aerodynamics/atmosphere_m.f90:183:12:
+
+  183 |         if (Z_m == zrange(7)) then
+      |            1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/aerodynamics/atmosphere_m.f90:195:20:
+
+  195 |                 if (T_prime(i) == 0.0_rk) then
+      |                    1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/falcon.f90:21:58:
+
+   21 |     real(rk)         :: H_ft, rho, mu, nu, g, lambda, a, Z_m, Z_ft, T, P
+      |                                                          1~~
+Warning: Unused variable 'z_m' declared at (1) [-Wunused-variable]

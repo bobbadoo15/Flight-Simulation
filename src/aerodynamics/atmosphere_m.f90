@@ -21,8 +21,10 @@ module atmosphere_m
     type :: atmosphere
     contains
         ! procedure :: init                 => atmosphere_init
-        procedure :: gm2gp                   => geometric2geopotential
-        procedure :: gp2gm                   => geopotential2geometric
+        procedure :: gm2gp_si                => geometric2geopotential_si
+        procedure :: gp2gm_si                => geopotential2geometric_si
+        procedure :: gm2gp_us                => geometric2geopotential_us
+        procedure :: gp2gm_us                => geopotential2geometric_us
         procedure :: temp_and_pressure_gm_si => get_temperature_and_pressure_from_geometric_si
         procedure :: temp_and_pressure_gm_us => get_temperature_and_pressure_from_geometric_us
         procedure :: temp_and_pressure_gp_si => get_temperature_and_pressure_from_geopotential_si
@@ -110,19 +112,35 @@ contains
         class(atmosphere), intent(in) :: atmo
     end subroutine atmosphere_init
 
-    function geometric2geopotential(atmo, H) result(Z)
+    function geometric2geopotential_si(atmo, H_m) result(Z_m)
         class(atmosphere), intent(in) :: atmo
-        real(rk), intent(in)          :: H
-        real(rk)                      :: Z
-        Z = (r_e_z * H) / (r_e_z + H) ! In metric
-    end function geometric2geopotential
+        real(rk), intent(in)          :: H_m
+        real(rk)                      :: Z_m
+        Z_m = (r_e_z * H_m) / (r_e_z + H_m) ! In metric
+    end function geometric2geopotential_si
 
-    function geopotential2geometric(atmo, Z) result(H)
+    function geopotential2geometric_si(atmo, Z_m) result(H_m)
         class(atmosphere), intent(in) :: atmo
-        real(rk), intent(in)          :: Z
-        real(rk)                      :: H
-        H = (Z * r_e_z) / (r_e_z - Z) ! In metric
-    end function geopotential2geometric
+        real(rk), intent(in)          :: Z_m
+        real(rk)                      :: H_m
+        H_m = (Z_m * r_e_z) / (r_e_z - Z_m) ! In metric
+    end function geopotential2geometric_si
+
+    function geometric2geopotential_us(atmo, H_ft) result(Z_ft)
+        class(atmosphere), intent(in) :: atmo
+        real(rk), intent(in)          :: H_ft
+        real(rk)                      :: Z_ft, Z_m
+        Z_m = atmo%gm2gp_si(H_ft * ft_to_m)
+        Z_ft = Z_m * m_to_ft
+    end function geometric2geopotential_us
+
+    function geopotential2geometric_us(atmo, Z_ft) result(H_ft)
+        class(atmosphere), intent(in) :: atmo
+        real(rk), intent(in)          :: Z_ft
+        real(rk)                      :: H_ft, H_m
+        H_m = atmo%gp2gm_si(Z_ft * ft_to_m)
+        H_ft = H_m * m_to_ft
+    end function geopotential2geometric_us
 
     subroutine get_air_properties_us(atmo, H_ft, rho, mu, nu, g, lambda, a)
         class(atmosphere), intent(in) :: atmo
@@ -151,31 +169,31 @@ contains
         lambda = molecularmeanfreepath(nu, a) ! m
     end subroutine get_air_properties_si
 
-    subroutine get_temperature_and_pressure_from_geopotential_si(atmo, Z, T, P)
+    subroutine get_temperature_and_pressure_from_geopotential_si(atmo, Z_m, T, P)
         class(atmosphere), intent(in) :: atmo
-        real(rk), intent(in)          :: Z
+        real(rk), intent(in)          :: Z_m
         real(rk), intent(out)         :: T, P
         real(rk)                      :: P_i
         integer                       :: i
         ! Error handle the validity of the tabulated atmosphere
-        if (Z < zrange(0) .or. Z > zrange(7)) then
+        if (Z_m < zrange(0) .or. Z_m > zrange(7)) then
             error stop "Geopotential altitude is outside atmosphere table"
         end if
         ! Check if Z is at the last boundary point
-        if (Z == zrange(7)) then
+        if (Z_m == zrange(7)) then
             T = T_i(6) + T_prime(6) * (zrange(7) - zrange(6))
             P = P_initial(7)
             return
         end if
         ! Find the range Z is in and interpolate/define values
         do i = 0, size(T_prime) - 1
-            if ((Z >= zrange(i)) .and. (Z < zrange(i+1))) then
+            if ((Z_m >= zrange(i)) .and. (Z_m < zrange(i+1))) then
                 ! Temperature at Z
-                T = T_i(i) + T_prime(i) * (Z - zrange(i))
+                T = T_i(i) + T_prime(i) * (Z_m - zrange(i))
                 P_i = P_initial(i)
                 ! Pressure at Z
                 if (T_prime(i) == 0.0_rk) then
-                    P = P_i * e ** ((-gssl_si * (Z - zrange(i))) / (r_air * T_i(i)))
+                    P = P_i * e ** ((-gssl_si * (Z_m - zrange(i))) / (r_air * T_i(i)))
                 else
                     P = P_i * (T / T_i(i)) ** ((-gssl_si) / (r_air * T_prime(i)))
                 end if
@@ -199,29 +217,29 @@ contains
         class(atmosphere), intent(in) :: atmo
         real(rk), intent(in)          :: H_m
         real(rk), intent(out)         :: T, P
-        real(rk)                      :: Z, P_i
+        real(rk)                      :: Z_m, P_i
         integer                       :: i
         ! Find geopotential
-        Z = atmo%gm2gp(H_m)
+        Z_m = atmo%gm2gp_si(H_m)
         ! Error handle the validity of the tabulated atmosphere
-        if (Z < zrange(0) .or. Z > zrange(7)) then
+        if (Z_m < zrange(0) .or. Z_m > zrange(7)) then
             error stop "Geopotential altitude is outside atmosphere table"
         end if
         ! Check if Z is at the last boundary point
-        if (Z == zrange(7)) then
+        if (Z_m == zrange(7)) then
             T = T_i(6) + T_prime(6) * (zrange(7) - zrange(6))
             P = P_initial(7)
             return
         end if
         ! Find the range Z is in and interpolate/define values
         do i = 0, size(T_prime) - 1
-            if ((Z >= zrange(i)) .and. (Z < zrange(i+1))) then
+            if ((Z_m >= zrange(i)) .and. (Z_m < zrange(i+1))) then
                 ! Temperature at Z
-                T = T_i(i) + T_prime(i) * (Z - zrange(i))
+                T = T_i(i) + T_prime(i) * (Z_m - zrange(i))
                 P_i = P_initial(i)
                 ! Pressure at Z
                 if (T_prime(i) == 0.0_rk) then
-                    P = P_i * e ** ((-gssl_si * (Z - zrange(i))) / (r_air * T_i(i)))
+                    P = P_i * e ** ((-gssl_si * (Z_m - zrange(i))) / (r_air * T_i(i)))
                 else
                     P = P_i * (T / T_i(i)) ** ((-gssl_si) / (r_air * T_prime(i)))
                 end if
