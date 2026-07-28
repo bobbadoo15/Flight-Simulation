@@ -18,7 +18,7 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     ! ==================================================
 
     type(atmosphere) :: atmo
-    real(rk)         :: H_ft, rho, mu, nu, g, lambda, a, Z_m, Z_ft, T, P
+    real(rk)         :: H_ft, rho, mu, nu, g, lambda, a, Z_ft, T, P
 
     H_ft = 150000_rk
 
