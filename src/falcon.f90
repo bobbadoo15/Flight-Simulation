@@ -20,7 +20,8 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     type(atmosphere) :: atmo
     real(rk)         :: H_ft, rho, mu, nu, g, lambda, a, Z_ft, T, P
 
-    H_ft = 150000_rk
+    ! H_ft = 35.10096667_rk
+    H_ft = 35.93176667_rk
 
     Z_ft = atmo%gm2gp_us(H_ft)
     call atmo%air_properties_us(H_ft, rho, mu, nu, g, lambda, a)
@@ -30,14 +31,14 @@ program FlightAnalysisforLandingControlandOperationsNetwork
     write(*,*) "================================================="
     write(*,*) "          AIR PROPERTIES IN US UNITS"
     write(*,*) "================================================="
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " g (ft/s2)      :      ", g
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " Z (ft)         :      ", Z_ft
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " T (R)          :      ", T
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " P (PSF)        :      ", P
+    ! write(*, '(A15, " : ", 1P, E24.16, 0P)') " g (ft/s2)      :      ", g
+    ! write(*, '(A15, " : ", 1P, E24.16, 0P)') " Z (ft)         :      ", Z_ft
+    ! write(*, '(A15, " : ", 1P, E24.16, 0P)') " T (R)          :      ", T
+    ! write(*, '(A15, " : ", 1P, E24.16, 0P)') " P (PSF)        :      ", P
     write(*, '(A15, " : ", 1P, E24.16, 0P)') " rho (slug/ft3) :      ", rho
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " a (ft/s)       :      ", a
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " mu (slug/fts)  :      ", mu
-    write(*, '(A15, " : ", 1P, E24.16, 0P)') " lambda (ft)    :      ", lambda
+    ! write(*, '(A15, " : ", 1P, E24.16, 0P)') " a (ft/s)       :      ", a
+    ! write(*, '(A15, " : ", 1P, E24.16, 0P)') " mu (slug/fts)  :      ", mu
+    ! write(*, '(A15, " : ", 1P, E24.16, 0P)') " lambda (ft)    :      ", lambda
     write(*,*) "================================================="
     write(*,*) ""
 
