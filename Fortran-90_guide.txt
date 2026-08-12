@@ -1,0 +1,516 @@
+FORTRAN 90 MASTER GUIDE
+Practical reference for scientific computing, simulation, numerical methods, and modular engineering code.
+
+Fortran 90 (F90) introduced free-form source, modules, array syntax, allocatable arrays, derived types, interfaces, and many intrinsic procedures. Modern compilers also support newer Fortran standards; this guide focuses on portable F90-style foundations.
+
+============================================================
+1. PROGRAM STRUCTURE
+============================================================
+program main
+    implicit none
+
+    ! Declarations go before executable statements.
+    integer :: i
+    real :: x
+
+    x = 3.0
+    print *, x
+end program main
+
+- `program name` and `end program name` are optional but recommended.
+- `implicit none` is essential: it prevents accidental undeclared variables.
+- `!` begins a comment anywhere on a line.
+- F90 free-form source normally uses `.f90`; source lines may be continued with `&`.
+- Names are case-insensitive: `Velocity`, `velocity`, and `VELOCITY` are the same identifier.
+
+============================================================
+2. COMPILING WITH GFORTRAN
+============================================================
+# Build executable:
+gfortran -std=f95 -Wall -Wextra -Wimplicit-interface -fcheck=all -g main.f90 -o main
+
+# Run on macOS/Linux:
+./main
+
+# Faster release build (test first with checks enabled):
+gfortran -std=f95 -O2 main.f90 -o main
+
+Useful flags:
+  -std=f95                 Request F95-standard conformance (near F90 baseline)
+  -Wall -Wextra            Enable useful warnings
+  -Wimplicit-interface     Warn for calls without explicit interfaces
+  -fcheck=all              Runtime bounds/pointer/etc. checks
+  -g                       Debug information
+  -fbacktrace              Print stack trace on runtime error
+  -ffpe-trap=zero,overflow,invalid   Stop on selected floating-point exceptions
+  -O0                      No optimization (debugging)
+  -O2 or -O3               Optimization
+  -J build                 Write module .mod files to build/
+  -I build                 Look for .mod files in build/
+
+Example multi-file build:
+gfortran -c -std=f95 -Wall math_utils.f90
+gfortran -c -std=f95 -Wall dynamics.f90
+gfortran -c -std=f95 -Wall main.f90
+gfortran math_utils.o dynamics.o main.o -o simulation
+
+Compile modules before files that `use` them.
+
+============================================================
+3. INTRINSIC TYPES AND KIND
+============================================================
+integer :: n = 10
+real :: x = 1.0
+real(kind=8) :: y = 1.0_8
+complex :: z
+logical :: converged
+character(len=40) :: name
+
+Intrinsic types:
+  integer       Whole numbers
+  real          Floating-point values
+  complex       Complex values
+  logical       .true. or .false.
+  character     Text
+
+Recommended portable precision module:
+module precision_mod
+    implicit none
+    integer, parameter :: dp = selected_real_kind(15, 307)
+end module precision_mod
+
+Use it:
+program example
+    use precision_mod, only : dp
+    implicit none
+    real(dp) :: altitude, pi
+    pi = acos(-1.0_dp)
+end program example
+
+Rules:
+- Add `_dp` to floating-point literals used with `real(dp)`: `9.81_dp`, not bare `9.81`.
+- `parameter` creates a named constant.
+- Avoid assuming `real` means 64-bit precision; select a kind explicitly.
+
+============================================================
+4. DECLARATIONS, CONSTANTS, AND ATTRIBUTES
+============================================================
+integer :: i, j
+integer :: count = 0
+real(dp) :: dt, t, velocity(3)
+real(dp), parameter :: g = 9.80665_dp
+logical :: active = .true.
+character(len=80) :: filename
+
+integer, dimension(10) :: ids
+real(dp), allocatable :: A(:,:), x(:)
+real(dp), pointer :: p => null()
+real(dp), target :: target_value
+
+Useful attributes:
+  parameter       Constant
+  allocatable     Dynamically sized storage, preferred for dynamic arrays
+  intent(in)      Procedure input; do not change it
+  intent(out)     Procedure output
+  intent(inout)   Procedure input and output
+  optional        Argument may be omitted
+  save            Persist local variable across calls
+  private/public  Module visibility
+
+============================================================
+5. OPERATORS AND EXPRESSIONS
+============================================================
+Arithmetic:
+  +  -  *  /  **
+
+Comparison:
+  ==  /=  <  <=  >  >=
+
+Logical:
+  .not.  .and.  .or.  .eqv.  .neqv.
+
+Examples:
+x = 2.0_dp**3                 ! 8.0
+if (x >= 0.0_dp .and. active) then
+    print *, 'valid'
+end if
+
+Integer division truncates:
+5 / 2                         ! 2
+5.0_dp / 2.0_dp               ! 2.5
+
+============================================================
+6. ARRAYS
+============================================================
+real(dp) :: v(3)
+real(dp) :: A(3,3)
+real(dp) :: B(0:9)            ! Explicit lower bound of 0
+real(dp), allocatable :: history(:,:)
+
+v = [1.0_dp, 2.0_dp, 3.0_dp]  ! Array constructor
+A = 0.0_dp                    ! Whole-array assignment
+A = reshape([1.0_dp,2.0_dp,3.0_dp,4.0_dp], [2,2])
+
+Array indexing is 1-based by default, but lower bounds can be specified.
+Fortran is column-major: the first index varies fastest in memory.
+
+v(2)                          ! Second element
+A(:,2)                        ! Entire second column
+A(2,:)                        ! Entire second row
+A(1:3:2,:)                    ! Rows 1 and 3
+A(:, :) = 0.0_dp
+
+Array operations are naturally element-wise when shapes conform:
+velocity = velocity + acceleration * dt
+squares = x**2
+mask = x > 0.0_dp
+where (mask)
+    y = sqrt(x)
+elsewhere
+    y = 0.0_dp
+end where
+
+Matrix multiplication is explicit:
+C = matmul(A, B)
+y = matmul(A, x)
+
+Do NOT use `*` for matrix multiply: it is element-wise multiplication for arrays.
+
+============================================================
+7. ALLOCATABLE ARRAYS
+============================================================
+real(dp), allocatable :: samples(:), matrix(:,:)
+integer :: n, stat
+
+n = 1000
+allocate(samples(n), stat=stat)
+if (stat /= 0) error stop 'Allocation failed'
+
+samples = 0.0_dp
+! ... use samples ...
+
+deallocate(samples)
+
+allocate(matrix(n,3))
+matrix = 0.0_dp
+
+Preferred pattern: use `allocatable`, not pointers, for ordinary dynamically sized arrays.
+Check allocation status during robust long-running simulations.
+
+============================================================
+8. CONTROL FLOW
+============================================================
+if (condition) then
+    ! statements
+else if (other_condition) then
+    ! statements
+else
+    ! statements
+end if
+
+select case (choice)
+case (1)
+    ! statements
+case (2:5)
+    ! statements
+case default
+    ! statements
+end select
+
+do i = 1, n
+    ! Loop body; default step = 1
+end do
+
+do i = 10, 1, -1
+    ! Countdown
+end do
+
+do while (error_norm > tolerance)
+    ! Loop while condition is true
+end do
+
+exit                         ! Exit the innermost loop
+cycle                        ! Skip to next iteration
+stop                         ! Stop program (legacy style)
+error stop 'message'         ! Stop with failure status/message
+
+Named loops make nested-loop exits clear:
+outer: do i = 1, nx
+    do j = 1, ny
+        if (done) exit outer
+    end do
+end do outer
+
+============================================================
+9. INPUT AND OUTPUT
+============================================================
+print *, 'Hello'             ! List-directed output
+print '(A, F10.4)', 'CL = ', cl
+write(*,*) 'Velocity: ', v
+
+read(*,*) n                  ! Read from terminal
+read(*,'(A)') name           ! Read a full line of text
+
+open(unit=10, file='data.txt', status='replace', action='write', iostat=ios)
+if (ios /= 0) error stop 'Could not open output file'
+write(10,'(F12.6,1X,F12.6)') time, altitude
+close(10)
+
+open(newunit=u, file='input.dat', status='old', action='read', iostat=ios)
+if (ios /= 0) error stop 'Could not open input file'
+do
+    read(u,*,iostat=ios) time, altitude
+    if (ios /= 0) exit
+    ! Process record
+end do
+close(u)
+
+Formatting descriptors:
+  Iw       Integer field width w              e.g., I6
+  Fw.d     Fixed decimal real                  e.g., F12.5
+  Ew.d     Exponential real                    e.g., E14.6
+  ES/EN    Scientific/engineering notation
+  A        Character data
+  Lw       Logical                             e.g., L1
+  X        One blank space
+  /        New line
+
+============================================================
+10. PROCEDURES: FUNCTIONS AND SUBROUTINES
+============================================================
+Functions return one result:
+function norm2(v) result(n)
+    use precision_mod, only : dp
+    implicit none
+    real(dp), intent(in) :: v(:)
+    real(dp) :: n
+    n = sqrt(sum(v**2))
+end function norm2
+
+Subroutines return values through arguments:
+subroutine euler_step(x, t, dt, x_next)
+    use precision_mod, only : dp
+    implicit none
+    real(dp), intent(in) :: x, t, dt
+    real(dp), intent(out) :: x_next
+    real(dp) :: xdot
+
+    xdot = -x
+    x_next = x + dt * xdot
+end subroutine euler_step
+
+Call syntax:
+call euler_step(x, t, dt, x_next)
+value = norm2(v)
+
+Best practice: put procedures inside modules. This gives callers an explicit interface automatically and enables argument checking.
+
+============================================================
+11. MODULES
+============================================================
+module vector_mod
+    use precision_mod, only : dp
+    implicit none
+    private
+    public :: norm2, cross3
+
+contains
+
+    function norm2(v) result(n)
+        real(dp), intent(in) :: v(:)
+        real(dp) :: n
+        n = sqrt(sum(v**2))
+    end function norm2
+
+    function cross3(a,b) result(c)
+        real(dp), intent(in) :: a(3), b(3)
+        real(dp) :: c(3)
+        c = [a(2)*b(3)-a(3)*b(2), &
+             a(3)*b(1)-a(1)*b(3), &
+             a(1)*b(2)-a(2)*b(1)]
+    end function cross3
+end module vector_mod
+
+program main
+    use vector_mod, only : norm2
+    implicit none
+    ! ...
+end program main
+
+`private` by default plus explicit `public` exports keeps module APIs clean.
+
+============================================================
+12. OPTIONAL ARGUMENTS AND GENERIC INTERFACES
+============================================================
+subroutine integrate(x, dt, method)
+    use precision_mod, only : dp
+    real(dp), intent(inout) :: x
+    real(dp), intent(in) :: dt
+    character(len=*), intent(in), optional :: method
+
+    if (present(method)) then
+        print *, 'Method: ', method
+    end if
+end subroutine integrate
+
+Generic interfaces can expose several procedures under one name, but modules and distinct descriptive procedure names are usually the simplest starting point.
+
+============================================================
+13. DERIVED TYPES (F90 STRUCT-LIKE OBJECTS)
+============================================================
+module state_mod
+    use precision_mod, only : dp
+    implicit none
+
+    type :: vehicle_state
+        real(dp) :: time = 0.0_dp
+        real(dp) :: position(3) = 0.0_dp
+        real(dp) :: velocity(3) = 0.0_dp
+        real(dp) :: quaternion(4) = [1.0_dp, 0.0_dp, 0.0_dp, 0.0_dp]
+    end type vehicle_state
+end module state_mod
+
+Use `%` to access a component:
+type(vehicle_state) :: state
+state%position = [10.0_dp, 0.0_dp, -5.0_dp]
+state%time = state%time + dt
+
+F90 derived types hold data. Type-bound procedures and inheritance are later Fortran features, not F90.
+
+============================================================
+14. INTRINSIC PROCEDURES
+============================================================
+Math:
+  abs(x), sqrt(x), exp(x), log(x), log10(x)
+  sin(x), cos(x), tan(x), asin(x), acos(x), atan(x), atan2(y,x)
+  sinh(x), cosh(x), tanh(x)
+  mod(a,p), modulo(a,p), sign(a,b)
+  min(a,b,...), max(a,b,...)
+  floor(x), ceiling(x), nint(x), int(x), real(i,dp)
+
+Arrays:
+  size(a), shape(a), rank(a), lbound(a), ubound(a)
+  sum(a), product(a), minval(a), maxval(a)
+  any(mask), all(mask), count(mask)
+  dot_product(a,b), matmul(A,B), transpose(A)
+  maxloc(a), minloc(a)
+  reshape(a,shape), spread(a,dim,ncopies)
+  pack(a,mask), unpack(vector,mask,field)
+  cshift(a,shift), eoshift(a,shift)
+
+Characters:
+  len(s), len_trim(s), trim(s), adjustl(s), adjustr(s)
+  index(s,substring), repeat(s,n), achar(i), iachar(c)
+
+Kinds and inquiries:
+  kind(x), selected_real_kind(p,r), huge(x), tiny(x), epsilon(x)
+  allocated(a), associated(p), present(arg)
+
+Random numbers:
+  call random_number(x)       ! Scalar or array uniform [0,1)
+  call random_seed()          ! Query/set random seed
+
+============================================================
+15. COMMON NUMERICAL PATTERNS
+============================================================
+! Forward Euler time integration
+allocate(x(n_steps))
+x(1) = x0
+do k = 1, n_steps-1
+    xdot = rhs(t(k), x(k))
+    x(k+1) = x(k) + dt*xdot
+end do
+
+! Simple statistics
+mean_x = sum(x) / real(size(x), dp)
+variance = sum((x - mean_x)**2) / real(size(x)-1, dp)
+std_x = sqrt(variance)
+
+! Monte Carlo samples
+call random_number(u)
+x = x_min + (x_max - x_min)*u
+
+! Dot product and vector norm
+speed_squared = dot_product(v, v)
+speed = sqrt(dot_product(v, v))
+
+============================================================
+16. COMMON ERRORS AND FIXES
+============================================================
+1. Omitting `implicit none`
+   Fix: put it in every program, module, procedure, and interface scope.
+
+2. Accidentally using default precision
+   Fix: define `dp` with selected_real_kind and write literals as `1.0_dp`.
+
+3. Allocating repeatedly in a time loop
+   Fix: allocate once outside the loop; deallocate when done.
+
+4. Assuming `*` does matrix multiplication
+   Fix: use `matmul(A,B)`.
+
+5. Passing an array of incorrect shape
+   Fix: use module procedures and explicit-shape/assumed-shape declarations.
+
+6. Not checking file I/O status
+   Fix: add `iostat=ios` to OPEN/READ/WRITE and test `ios`.
+
+7. Using `==` for floating-point equality
+   Fix: test a tolerance, e.g. `abs(a-b) < tol`.
+
+8. Mixing up array bounds
+   Fix: inspect `lbound(a)`, `ubound(a)`, and `size(a)`.
+
+============================================================
+17. RECOMMENDED PROJECT LAYOUT
+============================================================
+project/
+  src/
+    precision_mod.f90
+    constants_mod.f90
+    state_mod.f90
+    dynamics_mod.f90
+    io_mod.f90
+    main.f90
+  build/
+  data/
+  results/
+  tests/
+  Makefile
+
+Design guidance:
+- Put numerical constants and kinds in modules.
+- Put reusable procedures in modules.
+- Keep the main program thin: configure, initialize, call, save results.
+- Separate dynamics, integration, I/O, random sampling, and data types.
+- Compile with runtime checks during development.
+
+============================================================
+18. MATLAB/PYTHON TO FORTRAN MAP
+============================================================
+MATLAB `A * B` matrix product     -> `matmul(A,B)`
+MATLAB `A .* B`                   -> `A * B` for conformable arrays
+MATLAB `A \ b` solve              -> Use LAPACK / a numerical library
+MATLAB `A(:,j)`                   -> `A(:,j)`
+MATLAB `A(end,:)`                 -> `A(size(A,1),:)`
+Python list                        -> Fortran array
+Python class data                  -> F90 derived type
+Python function                    -> `function ... end function`
+Python function with output args   -> `subroutine ... end subroutine`
+Python module                      -> `module ... end module`
+Python `None`                      -> commonly an unallocated allocatable or disassociated pointer
+Python 0-based indexing            -> Fortran normally begins at 1
+
+============================================================
+19. DEVELOPMENT CHECKLIST
+============================================================
+[ ] Use `implicit none` everywhere.
+[ ] Use a `dp` kind for simulation state and constants.
+[ ] Give every procedure explicit argument declarations and INTENT.
+[ ] Put callable procedures in modules.
+[ ] Preallocate arrays; avoid allocation in hot loops.
+[ ] Test with `-Wall -Wextra -fcheck=all -g -fbacktrace`.
+[ ] Check I/O with IOSTAT.
+[ ] Use tolerances for floating-point comparisons.
+[ ] Validate dimensional consistency and array shapes.
+[ ] Build an optimized executable only after tests pass.
